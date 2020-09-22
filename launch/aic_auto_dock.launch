@@ -1,0 +1,111 @@
+<launch>
+    <arg name="laser_1_ip" default="$(optenv LASER_1_IP 0)" />
+    <arg name="laser_1_port" default="$(optenv LASER_1_PORT 0)" />
+    <arg name="laser_2_ip" default="$(optenv LASER_2_IP 0)" />
+    <arg name="laser_2_port" default="$(optenv LASER_2_PORT 0)" />
+
+    <!--whether is multi_lasers-->
+    <arg if="$(eval arg('laser_1_ip') is not 0 or arg('laser_1_port') is not 0)" name="laser_1_exist" value="true"/>
+    <arg unless="$(eval arg('laser_1_ip') is not 0 or arg('laser_1_port') is not 0)" name="laser_1_exist" value="false"/>
+    <arg if="$(eval arg('laser_2_ip') is not 0 or arg('laser_2_port') is not 0)" name="laser_2_exist" value="true"/>
+    <arg unless="$(eval arg('laser_2_ip') is not 0 or arg('laser_2_port') is not 0)" name="laser_2_exist" value="false"/>
+
+    <arg if="$(eval arg('laser_1_exist') is true and arg('laser_2_exist') is true)" name="multi_lasers" value="true"/>
+    <arg if="$(eval arg('laser_1_exist') is false and arg('laser_2_exist') is false)" name="multi_lasers" value="false"/>
+    <arg if="$(eval arg('laser_1_exist') is true and arg('laser_2_exist') is false)" name="multi_lasers" value="false"/>
+    <arg if="$(eval arg('laser_1_exist') is false and arg('laser_2_exist') is true)" name="multi_lasers" value="false"/>
+
+    <arg name="scan_topic1" value="/scan_1" />
+    <arg name="laser_frame1" value="laser_link_1" />
+    <arg name="scan_topic2" value="/scan_2" />
+    <arg name="laser_frame2" value="laser_link_2" />
+    <arg name="scan_topic" value="/scan" />
+    <arg name="laser_frame" value="laser_link" />
+
+    <rosparam file="$(eval (env('HOME') + '/.aicconfig/autodock/dock_param.yaml'))" command="load" />
+    <rosparam file="$(eval (env('HOME') + '/.aicconfig/autodock/guiway.yaml'))" command="load" />
+
+    <env name="ROSCONSOLE_CONFIG_FILE" value="$(find aic_auto_dock)/launch/rosconsole.config"/>
+    <node name="aic_auto_dock_node" pkg="aic_auto_dock" type="aic_auto_dock_node" output="screen">
+
+        <remap from="/dock_cmd_vel" to="/base_cmd_vel"/>
+        <remap from="/autodock/scan" to="/scan"/>
+        <param name= "~scan_frame" value = "laser_link"/>
+
+        <!-- -->
+        <param name= "~featureMatchingTimeout" value="10"/>
+        <param name= "~stepControlTimeout" value="60"/>
+        <param name= "~guiway_vel_line" value="0.2"/>
+        <param name= "~guiway_vel_angle" value="0.4"/>
+        <param name= "~preparePosition" value="0.5"/>
+        <param name= "~delta_backDist" value="0.02"/>
+        <param name= "~stop_recognizeDist" value="0.0"/>
+        <param name= "~obstacle_dist" value="0.2"/>
+        <param name= "~getout_vel" value="0.2"/>
+        <param name= "~scale" value="0.015"/>
+        <param name= "~rate" value="15"/>
+        <param name= "~average_times" value="15"/>
+
+        <!-- -->
+        <param name= "~multi_scan" value="$(arg multi_lasers)" />
+
+        <!-- -->
+        <param name= "~v_shape/scan_topic1" value="$(arg scan_topic1)" />
+        <param name= "~v_shape/scan_frame1" value="$(arg laser_frame1)" />
+        <param name= "~v_shape/scan_topic2" value="$(arg scan_topic2)" />
+        <param name= "~v_shape/scan_frame2" value="$(arg laser_frame2)" />
+        <param name= "~v_shape/scan_topic" value="$(arg scan_topic)" />
+        <param name= "~v_shape/scan_frame" value="$(arg laser_frame)" />
+        <param name= "~v_shape/max_lines_1_2_angle" value="42"/>
+        <param name= "~v_shape/min_lines_1_2_angle" value="25"/>
+        <param name= "~v_shape/max_lines_2_3_angle" value="72"/>
+        <param name= "~v_shape/min_lines_2_3_angle" value="40"/>
+        <param name= "~v_shape/max_lines_1_3_angle" value="40"/>
+        <param name= "~v_shape/min_lines_1_3_angle" value="5"/>
+        <param name= "~v_shape/max_lines1" value="0.35"/>
+        <param name= "~v_shape/min_lines1" value="0.10"/>
+        <param name= "~v_shape/max_lines2" value="0.22"/>
+        <param name= "~v_shape/min_lines2" value="0.05"/>
+        <param name= "~v_shape/max_lines3" value="0.22"/>
+        <param name= "~v_shape/min_lines3" value="0.05"/>
+
+        <!-- -->
+        <param name= "~parallel/scan_topic1" value="$(arg scan_topic1)" />
+        <param name= "~parallel/scan_frame1" value="$(arg laser_frame1)" />
+        <param name= "~parallel/scan_topic2" value="$(arg scan_topic2)" />
+        <param name= "~parallel/scan_frame2" value="$(arg laser_frame2)" />
+        <param name= "~parallel/scan_topic" value="$(arg scan_topic)" />
+        <param name= "~parallel/scan_frame" value="$(arg laser_frame)" />
+        <param name= "~parallel/linesMinGap" value="0.9" />
+        <param name= "~parallel/linesMaxGap" value="1.1" />
+        <param name= "~parallel/maxmunLength" value="0.8" />
+        <param name= "~parallel/minimunLength" value="0.7" />
+        <param name= "~parallel/linesMinAngle" value="-0.087" />
+        <param name= "~parallel/linesMaxAngle" value="0.087" />
+        <param name= "~parallel/charging_port" value="1.1" />
+        <param name= "~parallel/charging_port_delta_y" value="0.0" />
+        <param name= "~parallel/charging_port_delta_angle" value="0.0" />
+        <param name= "~parallel/delta_backDist" value="0.0" />
+
+
+        <!-- line_extra_node -->
+        <param name="~frequency" value="30.0" />
+        <param name="~publish_markers" value="true" />
+        <param name="~bearing_std_dev" value="1e-5" />
+        <param name="~range_std_dev" value="0.002" />
+        <param name="~least_sq_angle_thresh" value="0.0001" />
+        <param name="~least_sq_radius_thresh" value="0.0001" />
+        <param name="~max_line_gap" value="0.07" />
+        <param name="~min_line_length" value="0.1" />
+        <param name="~max_line_length" value="1.5" />
+        <param name="~min_range" value="0.1" />
+        <param name="~max_range" value="2.0" />
+        <param name="~min_split_dist" value="0.02" />
+        <param name="~outlier_dist" value="0.09" />
+        <param name="~min_line_points" value="4" />
+    </node>
+
+    <node name="aic_auto_dock_guiway" pkg="aic_auto_dock" type="gui_way2" output="screen" >
+        <remap from="/dock_cmd_vel" to="/base_cmd_vel"/>
+    </node>
+</launch>
