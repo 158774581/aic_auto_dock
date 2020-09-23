@@ -1518,6 +1518,8 @@ PoseSE2 goal_pos(4,0,0);
 geometry_msgs::Twist g_cmd_vel;
 nav_msgs::Odometry robot_odom;
 geometry_msgs::Polygon footprint;
+std::vector<PoseSE2> global_path_left;
+std::vector<PoseSE2> global_path_right;
 // =============== Main function =================
 int main( int argc, char** argv )
 {
@@ -1529,9 +1531,11 @@ int main( int argc, char** argv )
   teb_planner teb_planner_1(n);
   my_planner = &teb_planner_1;
 
-  my_planner->setLineObstacle(-0.5, 0.1,-0.5, 2.1);
-  my_planner->setLineObstacle(0.5, 0.1,0.5, 2.1);
-  my_planner->setLineObstacle(-0.5, 0.1,0.5, 0.1);
+  my_planner->setLineObstacle(-0.5, 0.6,-0.5, 2.6);
+  my_planner->setLineObstacle(0.5, 0.6,0.5, 2.6);
+  my_planner->setLineObstacle(-0.5, 0.6,0.5, 0.6);
+  //global_path_left.push_back(boost::make_shared<PoseSE2>())
+
   ros::Timer cycle_timer = n.createTimer(ros::Duration(0.05), CB_mainCycle);
   ros::Timer publish_timer = n.createTimer(ros::Duration(0.1), \
                              boost::bind(&teb_planner::CB_publishCycle,my_planner,_1));
@@ -1640,7 +1644,12 @@ void CB_mainCycle(const ros::TimerEvent& e)
   geometry_msgs::Twist cmd_vel;
   double vy;
   my_planner->setplan(initial_pos,robot_odom.twist.twist,goal_pos);
-  my_planner->getVelocityCommand(cmd_vel.linear.x,vy,cmd_vel.angular.z,1);
+  if(my_planner->getVelocityCommand(cmd_vel.linear.x,vy,cmd_vel.angular.z,1) == false)
+  {
+    //plan failed ,set vel = 0
+    cmd_vel.linear.x  = 0;
+    cmd_vel.angular.z = 0;
+  }
   velocity_pub.publish(cmd_vel);
 }
 
@@ -1839,9 +1848,9 @@ void scan_callback(const sensor_msgs::LaserScanConstPtr& msg)
   }
   else
   {
-    obst_vector.push_back( boost::make_shared<LineObstacle>(-0.5, 0,-0.5, 2));
-    obst_vector.push_back( boost::make_shared<LineObstacle>(0.5, 0,0.5, 2));
-    obst_vector.push_back( boost::make_shared<LineObstacle>(-0.5, 0,0.5, 0));
+    obst_vector.push_back( boost::make_shared<LineObstacle>(0, 1,0, 3));
+    obst_vector.push_back( boost::make_shared<LineObstacle>(1, 1,1, 3));
+    obst_vector.push_back( boost::make_shared<LineObstacle>(0, 1,1, 1));
   }
 }
 
@@ -1879,13 +1888,13 @@ teb_planner::teb_planner(ros::NodeHandle& nh):nh_(nh)
   visual_ = TebVisualizationPtr(new TebVisualization(nh, config_));
   
   // Setup robot shape model
-  RobotFootprintModelPtr robot_model = TebLocalPlannerROS::getRobotFootprintFromParamServer(nh);
+  robot_model_ = TebLocalPlannerROS::getRobotFootprintFromParamServer(nh);
 
   // Setup planner (homotopy class planning or just the local teb planner)
   if (config_.hcp.enable_homotopy_class_planning)
-    planner_ = PlannerInterfacePtr(new HomotopyClassPlanner(config_, &obst_vector_, robot_model, visual_, &via_points_));
+    planner_ = PlannerInterfacePtr(new HomotopyClassPlanner(config_, &obst_vector_, robot_model_, visual_, &via_points_));
   else
-    planner_ = PlannerInterfacePtr(new TebOptimalPlanner(config_, &obst_vector_, robot_model, visual_, &via_points_));
+    planner_ = PlannerInterfacePtr(new TebOptimalPlanner(config_, &obst_vector_, robot_model_, visual_, &via_points_));
   
 }
 
@@ -1898,7 +1907,15 @@ bool teb_planner::getVelocityCommand(double& vx, double& vy, double& omega, int 
     ROS_WARN("teb_local_planner was not able to obtain a local plan for the current setting.");
     return false;
   }
-  return planner_.get()->getVelocityCommand(vx, vy, omega,look_ahead_poses);
+  if(planner_.get()->getVelocityCommand(vx, vy, omega,look_ahead_poses) ==true)
+  {
+    double look_ahead_time = 0.3;
+    if(isTrajFeasible(vx, vy, omega,look_ahead_time) == true)
+    {
+      return true;
+    }
+  }
+  return false;
 }
 
 bool teb_planner::setplan(PoseSE2& startpose,geometry_msgs::Twist& startVel,PoseSE2& endpose)
@@ -1922,8 +1939,60 @@ void teb_planner::setLineObstacle(float x0,float y0,float x1,float y1)
   obst_vector_.push_back( boost::make_shared<LineObstacle>(x0, y0,x1, y1));
 }
 
-bool teb_planner::isTrajectoryFeasible()
+bool teb_planner::isTrajFeasible(double vx, double vy, double omega, double look_ahead_time)
 {
-  //std::vector<TrajectoryPointMsg> trajectory;
+  PoseSE2 predict_pose(startpose_);
+  // double DT = 0.1;
+  // double t = 0;
+  // while(t<look_ahead_time)
+  // {
+  //   predict_pose.theta()  += omega*look_ahead_time;
+  //   predict_pose.x()      += vx*std::cos(predict_pose.theta())*DT;
+  //   predict_pose.y()      += vx*std::sin(predict_pose.theta())*DT;
+  //   t += DT;
+  // }
+  std::vector<TrajectoryPointMsg> traj;
+  if(config_.hcp.enable_homotopy_class_planning == 0)
+  {
+    boost::shared_ptr<TebOptimalPlanner> p_planner = boost::dynamic_pointer_cast<TebOptimalPlanner>(planner_);
+    p_planner.get()->getFullTrajectory(traj);
+    for(auto pose:traj)
+    {
+      predict_pose.x()    = pose.pose.position.x;
+      predict_pose.y()    = pose.pose.position.y;
+      predict_pose.theta()    = tf::getYaw(pose.pose.orientation);
+      for (ObstContainer::const_iterator obst = obst_vector_.begin(); obst != obst_vector_.end(); ++obst)
+      {
+        boost::shared_ptr<LineObstacle> pobst = boost::dynamic_pointer_cast<LineObstacle>(*obst);   
+        if (!pobst)
+          continue;
+          
+        double obs_dis = robot_model_->calculateDistance(predict_pose,pobst.get());
+        if(obs_dis < config_.obstacles.min_obstacle_dist)
+        {
+          ROS_INFO("robot is too close to obstacles,distance %f %f!!!",config_.obstacles.min_obstacle_dist,obs_dis);
+          return false;
+        }
+      }
+    }
+  }
+  else
+  {
+
+  }
+
+  // for (ObstContainer::const_iterator obst = obst_vector_.begin(); obst != obst_vector_.end(); ++obst)
+  // {
+  //   boost::shared_ptr<LineObstacle> pobst = boost::dynamic_pointer_cast<LineObstacle>(*obst);   
+  //   if (!pobst)
+	// 		continue;
+      
+  //   double obs_dis = robot_model_->calculateDistance(predict_pose,pobst.get());
+  //   if(obs_dis < config_.obstacles.min_obstacle_dist)
+  //   {
+  //     ROS_INFO("robot is too close to obstacles,distance %f %f!!!",config_.obstacles.min_obstacle_dist,obs_dis);
+  //     return false;
+  //   }
+  // }
   return true;
 }

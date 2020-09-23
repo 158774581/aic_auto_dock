@@ -128,6 +128,7 @@ private:
 
 };
 
+//plan in odom
 class teb_planner
 {
   public:
@@ -138,7 +139,7 @@ class teb_planner
     PlannerInterfacePtr getplanner(){return planner_;};
     void CB_publishCycle(const ros::TimerEvent& e);
     void setLineObstacle(float x0,float y0,float x1,float y1);
-    bool isTrajectoryFeasible();
+    bool isTrajFeasible(double vx, double vy, double omega, double look_ahead_time);
   private:
     ros::NodeHandle nh_;
     PlannerInterfacePtr planner_;
@@ -147,7 +148,8 @@ class teb_planner
     TebConfig config_;
     boost::shared_ptr< dynamic_reconfigure::Server<TebLocalPlannerReconfigureConfig> > dynamic_recfg_; //!< Dynamic reconfigure server to allow config modifications at runtime
     TebVisualizationPtr visual_;
-
+    RobotFootprintModelPtr robot_model_;
+    
     PoseSE2 startpose_; //!< Store current robot pose
     PoseSE2 endpose_; //!< Store current robot goal
     geometry_msgs::Twist startvel_; //!< Store current robot translational and angular velocity (vx, vy, omega)
