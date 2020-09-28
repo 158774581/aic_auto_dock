@@ -2,6 +2,7 @@
 #define GUI_WAY_H
 
 #include <actionlib/server/simple_action_server.h>
+#include <actionlib/client/simple_action_client.h>
 #include <aic_auto_dock/gui_way2Action.h>
 #include <aic_auto_dock/math/footprint.h>
 #include <aic_auto_dock/math/pnpoly.hpp>
@@ -27,8 +28,11 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <ros/subscriber.h>
+
+typedef actionlib::SimpleActionClient< aic_auto_dock::gui_way2Action > Client_gui_way;
 //end (teb)
 typedef actionlib::SimpleActionServer< aic_auto_dock::gui_way2Action > Server;
+class teb_planner;
 
 using namespace std;
 using namespace recognize_extraction;
@@ -69,6 +73,7 @@ private:
   void odomCallback(const nav_msgs::OdometryConstPtr&);
   void setFootprintCallback(const geometry_msgs::Polygon& msg);
   void LaserCallback(const sensor_msgs::LaserScan& msg);
+  void CB_simple_goal(const geometry_msgs::PoseStampedConstPtr& msg);
 
   bool goalAccept();
 
@@ -79,6 +84,7 @@ private:
   bool loadParamFromYaml();
   void cleanProcess(void);
 
+  bool findGlobalPath();
   Server* as_;
 
   ros::NodeHandle local_nh_, nh_;
@@ -86,6 +92,7 @@ private:
   ros::Subscriber laser_sub_;
   ros::Subscriber odom_sub_;
   ros::Publisher twist_pub_;
+  ros::Subscriber simple_goal_sub_;
   tf::TransformListener listerner_;
   ros::Subscriber sub_robot_exception_;
   ros::Publisher marker_pub_CarRadius;
@@ -108,6 +115,7 @@ private:
   /*** global variable ***/
   tf::Transform realTime_odom_, port_foot_frame, prepare_foot_frame, prepareNav_foot_frame, odom_port_frame_,
       target_foot_frame;
+  geometry_msgs::Twist realTime_twist_;
   double prepareNavAngle_, preparePositionNav;
   StepProcess process_;
 
@@ -125,7 +133,13 @@ private:
   geometry_msgs::Polygon points_polygon_, points_straight_polygon_padding_, points_turn_polygon_padding_;
 
   double vel_line_, vel_angle_;
+  //teb
+  PoseSE2 goal_robot_frame_;
+  vector<PoseSE2> global_path_;
+  double goal_inflation_x_,goal_inflation_y_;
 
+  teb_planner* planner_;
+  Client_gui_way* simple_goal_client_;
 };
 
 //plan in odom
@@ -138,8 +152,14 @@ class teb_planner
     bool setplan(PoseSE2& startpose,geometry_msgs::Twist& startVel,PoseSE2& endpose);
     PlannerInterfacePtr getplanner(){return planner_;};
     void CB_publishCycle(const ros::TimerEvent& e);
+    void CB_publishCycle();
     void setLineObstacle(float x0,float y0,float x1,float y1);
+    void setViaPoints(const nav_msgs::Path::ConstPtr& via_points_msg);
+    void clearObstacle();
     bool isTrajFeasible(double vx, double vy, double omega, double look_ahead_time);
+    bool isTrajFeasible(PoseSE2 robot_pos, PoseSE2 goal_pos);
+    bool findGuiWayPath(vector<PoseSE2>& path);
+
   private:
     ros::NodeHandle nh_;
     PlannerInterfacePtr planner_;

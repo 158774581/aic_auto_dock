@@ -7,7 +7,8 @@
 //gui way 
 
 gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
-    : nh_(nh), local_nh_(local_nh), as_(new Server(local_nh, "gui_way", boost::bind(&gui_way::start, this, _1), false))
+    : nh_(nh), local_nh_(local_nh), as_(new Server(local_nh, "gui_way", boost::bind(&gui_way::start, this, _1), false)),
+    planner_(new teb_planner(local_nh)),simple_goal_client_(new Client_gui_way("aic_auto_dock_guiway/gui_way", true))
 {
   as_->start();
 
@@ -23,6 +24,12 @@ gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
   vector< geometry_msgs::Point > points = makeFootprintFromParams(nh);
   points_ = points;
 
+  //teb
+  simple_goal_sub_ = nh.subscribe("/move_base_simple/goal", 1, &gui_way::CB_simple_goal,this);
+  //ros::Timer publish_timer = nh.createTimer(ros::Duration(0.1), \
+  //                           boost::bind(&teb_planner::CB_publishCycle,planner_,_1));
+  
+  //end 
   double half_length = 0, half_width = 0;
   for (vector< geometry_msgs::Point >::iterator cit = points.begin(); cit != points.end(); cit++)
   {
@@ -37,8 +44,8 @@ gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
 
   try
   {
-    listerner_.waitForTransform("base_footprint", "laser_link", ros::Time(0), ros::Duration(10.0));
-    listerner_.lookupTransform("base_footprint", "laser_link", ros::Time(0), foot_laser_frame_);
+    listerner_.waitForTransform("base_footprint", "base_laser_link", ros::Time(0), ros::Duration(10.0));
+    listerner_.lookupTransform("base_footprint", "base_laser_link", ros::Time(0), foot_laser_frame_);
   }
   catch (tf::TransformException ex)
   {
@@ -65,203 +72,13 @@ gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
   loadParamFromYaml();
 }
 
-bool gui_way::initDetector(double& percent, tf::Transform frame, double detector_y_coordinate)
-{
-  int square;
-  double radix = 1.2, base = 0.0, scale;
-  if (process_.portStepProcessing)
-    scale = scale_;
-  else
-    scale = prepare_scale_;
-
-  /********** 车头正前方 left detector ***********/
-  tf::Quaternion q;
-  q.setRPY(0, 0, 0);
-  vector< tf::Transform > foot_leftDetector_frame;
-  vector< detector > port_leftDetector;
-  square = 0;
-  for (int i = 0; i < 100; i++)
-  {
-    tf::Transform _foot_leftDetector_frame(
-        q, tf::Vector3(detector_y_coordinate, delta_detector_spacing_ / 2 + (i * delta_detector_spacing_), 0));
-    foot_leftDetector_frame.push_back(_foot_leftDetector_frame);
-  }
-  for (vector< tf::Transform >::iterator cit = foot_leftDetector_frame.begin(); cit != foot_leftDetector_frame.end();
-       cit++)
-  {
-    //    detector _port_leftDetector = {(frame * (*cit)).getOrigin().getY(), -pow(radix, square), square};
-    //    detector _port_leftDetector = {(frame * (*cit)).getOrigin().getY(), -exp(square+1), square};
-    detector _port_leftDetector = {
-        (frame * (*cit)).getOrigin().getY(),
-        (exp(square * scale) - exp(-square * scale)) / (exp(square * scale) + exp(-square * scale)), square};
-
-    port_leftDetector.push_back(_port_leftDetector);
-    square++;
-  }
-
-  /********** 车头正前方 right detector ***********/
-  vector< tf::Transform > foot_rightDetector_frame;
-  vector< detector > port_rightDetector;
-  square = 0;
-  for (int i = 0; i < 100; i++)
-  {
-    tf::Transform _foot_rightDetector_frame(
-        q, tf::Vector3(detector_y_coordinate, -(delta_detector_spacing_ / 2 + (i * delta_detector_spacing_)), 0));
-    foot_rightDetector_frame.push_back(_foot_rightDetector_frame);
-  }
-  for (vector< tf::Transform >::iterator cit = foot_rightDetector_frame.begin(); cit != foot_rightDetector_frame.end();
-       cit++)
-  {
-    //    detector _port_rightDetector = {(frame * (*cit)).getOrigin().getY(), pow(radix, square), square};
-    //    detector _port_rightDetector = {(frame * (*cit)).getOrigin().getY(), exp(square + 1), square};
-    detector _port_rightDetector = {
-        (frame * (*cit)).getOrigin().getY(),
-        -(exp(square * scale) - exp(-square * scale)) / (exp(square * scale) + exp(-square * scale)), square};
-
-    port_rightDetector.push_back(_port_rightDetector);
-    square++;
-
-    base += _port_rightDetector.weight;
-  }
-
-  vector< detector > port_detector;
-  port_detector.insert(port_detector.end(), port_leftDetector.begin(), port_leftDetector.end());
-  port_detector.insert(port_detector.end(), port_rightDetector.begin(), port_rightDetector.end());
-
-  int j = 0;
-  double min_dist = INFINITY;
-  for (int i = 0; i < port_detector.size(); i++)
-  {
-    if (fabs(port_detector[i].dist) < min_dist)
-    {
-      min_dist = fabs(port_detector[i].dist);
-      j = i;
-    }
-  }
-
-  //  double weight_sum = 1 * ((1.0 - pow(radix, 20)) / (1.0 - radix));
-  percent = port_detector[j].weight;
-  //    ROS_WARN("percent:%f, j:%d, weight:%f, base:%f", percent, j, port_detector[j].weight, base);
-
-  double allowable_percent = 0.8, allowable_dist;
-
-  for (int i = 0; i < port_rightDetector.size(); i++)
-  {
-    if (fabs(port_rightDetector[i].weight) > allowable_percent)
-    {
-      allowable_dist = port_detector[i].num * delta_detector_spacing_;
-      break;
-    }
-  }
-
-  //  ROS_INFO_THROTTLE(1, "percent:%f, dist:%f, allowable_dist:%f", percent, port_detector[j].num *
-  //  delta_detector_spacing_, allowable_dist);
-
-  if (percent > allowable_percent)
-  {
-    ROS_DEBUG_NAMED("guiway", "Warning, percent == 1:%f, dist:%f, allowable_dist:%f", percent,
-                    port_detector[j].num * delta_detector_spacing_, allowable_dist);
-
-    percent = allowable_percent;
-    return false;
-  }
-  else if (percent < -allowable_percent)
-  {
-    ROS_DEBUG_NAMED("guiway", "Warning, percent == -1:%f, dist:%f, allowable_dist:%f", percent,
-                    port_detector[j].num * delta_detector_spacing_, allowable_dist);
-
-    percent = -allowable_percent;
-    return false;
-  }
-  return true;
-}
-
-/*                                      +(小车）
-*                                  0.1 <+(小车）
-*         prepareNav_foot_frame +
-*                            0.1|
-*                          XXXXX|XXXXX  preparePosition_ + 0.1
-*           prepare_foot_frame  +
-*                                       +(小车）
-*                                      <+(小车）
-*
-*                          XXXXX+XXXXX  preparePosition_
-*         prepareNav_foot_frame |
-*                            0.1|
-*           prepare_foot_frame  +
-*
-*
-*                           X   XXXXXX
-*                            X X
-*                             X
-*/
-
-void gui_way::initFrame(void)
-{
-  tf::Quaternion q_port_prepare(0.0, 0.0, 0.0);
-  port_foot_frame = odom_port_frame_.inverse() * realTime_odom_;
-
-  if (port_foot_frame.getOrigin().getX() - 0.1 > preparePosition_)
-    preparePositionNav = port_foot_frame.getOrigin().getX() - 0.1;
-  else
-    preparePositionNav = preparePosition_;
-
-  tf::Transform port_prepare_frame(q_port_prepare, tf::Vector3(preparePositionNav - 0.1, 0.0, 0.0));
-  tf::Transform port_prepareTemp_frame(q_port_prepare, tf::Vector3(preparePositionNav, 0.0, 0.0));
-
-  prepare_foot_frame = port_prepare_frame.inverse() * port_foot_frame;
-
-  tf::Transform prepareTemp_foot_frame = port_prepareTemp_frame.inverse() * port_foot_frame;
-
-  Point start = {(realTime_odom_ * prepareTemp_foot_frame.inverse()).getOrigin().x(),
-                 (realTime_odom_ * prepareTemp_foot_frame.inverse()).getOrigin().y()};
-  Point end = {realTime_odom_.getOrigin().x(), realTime_odom_.getOrigin().y()};
-  Point pt1 = {0, 0};
-  Point pt2 = {1, 0};
-  prepareNavAngle_ = getAngelOfXaxisM_PI(start, end, pt1, pt2);
-  tf::Quaternion q_odom_prepareNav(0, 0, prepareNavAngle_);
-  tf::Transform odom_prepareNav_frame_ = realTime_odom_ * prepareTemp_foot_frame.inverse();
-  odom_prepareNav_frame_.setRotation(q_odom_prepareNav);
-  prepareNav_foot_frame = odom_prepareNav_frame_.inverse() * realTime_odom_;
-
-  br_.sendTransform(
-      tf::StampedTransform(realTime_odom_ * port_foot_frame.inverse(), ros::Time::now(), "odom", "odom_port"));
-  br_.sendTransform(
-      tf::StampedTransform(realTime_odom_ * prepare_foot_frame.inverse(), ros::Time::now(), "odom", "odom_prepare11"));
-  br_.sendTransform(tf::StampedTransform(odom_prepareNav_frame_, ros::Time::now(), "odom", "odom_prepareNav11"));
-}
-
-void gui_way::workingFrame(void)
-{
-  tf::Quaternion q_port_prepare(0.0, 0.0, 0.0);
-  port_foot_frame = odom_port_frame_.inverse() * realTime_odom_;
-
-  tf::Transform port_prepare_frame(q_port_prepare, tf::Vector3(preparePositionNav - 0.1, 0.0, 0.0));
-  tf::Transform port_prepareTemp_frame(q_port_prepare, tf::Vector3(preparePositionNav, 0.0, 0.0));
-
-  prepare_foot_frame = port_prepare_frame.inverse() * port_foot_frame;
-  tf::Transform prepareTemp_foot_frame = port_prepareTemp_frame.inverse() * port_foot_frame;
-
-  tf::Quaternion q_odom_prepareNav(0, 0, prepareNavAngle_);
-  tf::Transform odom_prepareNav_frame_ = realTime_odom_ * prepareTemp_foot_frame.inverse();
-  odom_prepareNav_frame_.setRotation(q_odom_prepareNav);
-  prepareNav_foot_frame = odom_prepareNav_frame_.inverse() * realTime_odom_;
-
-  br_.sendTransform(
-      tf::StampedTransform(realTime_odom_ * port_foot_frame.inverse(), ros::Time::now(), "odom", "odom_port"));
-  br_.sendTransform(
-      tf::StampedTransform(realTime_odom_ * prepare_foot_frame.inverse(), ros::Time::now(), "odom", "odom_prepare"));
-  br_.sendTransform(tf::StampedTransform(odom_prepareNav_frame_, ros::Time::now(), "odom", "odom_prepareNav"));
-}
-
 void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
 {
   laser_sub_ = nh_.subscribe("/scan", 10, &gui_way::LaserCallback, this);
-
-  cout << endl;
-  cout << endl;
   ROS_INFO("gui way accept goal");
 
+  PoseSE2 initial_pos;
+  PoseSE2 goal_pos(req->pose);
   /*** 方向 ***/
   if (req->type == aic_auto_dock::gui_way2Goal::STRAIGHT)
   {
@@ -270,6 +87,7 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
     dangerRange_xMin_ = -fabs(dangerRange_x_);
     dangerRange_yMax_ = fabs(dangerRange_y_);
     dangerRange_yMin_ = -fabs(dangerRange_y_);
+    goal_pos.theta()  = goal_pos.theta()>0? goal_pos.theta()-M_PI:goal_pos.theta()+M_PI;
   }
   else if (req->type == aic_auto_dock::gui_way2Goal::BACK)
   {
@@ -325,7 +143,7 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
   /*** 其他参数 ***/
   back_dist_ = req->back_dist;
   obstacle_dist_ = req->obstacle_dist;
-  ROS_INFO("obstacle_dist_:%f", obstacle_dist_);
+  ROS_INFO("obstacle_dist_ %f back_dist_ %f", obstacle_dist_,back_dist_);
   preparePosition_ = req->preparePosition;
   if (req->scale > 0 || req->scale < 0.1)
     scale_ = req->scale;
@@ -339,25 +157,10 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
   /*** 初始化目标点 ***/
   tf::poseMsgToTF(req->pose, odom_port_frame_);
 
-  /*** 本地变量 ***/
-  double vel_line = vel_line_, vel_angle = vel_angle_;
   double angleVel_turn = angleVel_turn_;
-  double aW_dcc = aW_dcc_, aW_acc = aW_acc_; //旋转时的角加速度
-  double initYaw = 0.0;
-  bool turnMark = false;
   geometry_msgs::Twist twist;
-  bool turnBool = true, slowdownBool = true, arriveturnBool = true;
   ros::Rate rate(20);
-  docking_direction direction;
-  double yawThrehold;
   double begin_time = ros::Time::now().toSec();
-  cleanProcess();
-
-  /*** 初始化target_foot_frame ***/
-  initFrame();
-
-  /*** 判断初始步骤 ***/
-  initStepProcess(radiusThrehold_);
 
   /*** 执行 ***/
   while (ros::ok())
@@ -375,426 +178,93 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
       return;
     }
 
+    planner_->CB_publishCycle();
     double dt = ros::Time::now().toSec() - begin_time;
     begin_time = ros::Time::now().toSec();
 
-    pubVirtualPath();
-
-    /*** 获取target_foot_frame ***/
-    workingFrame();
-
-    /*** 步骤选择 ***/
-    if (process_.process == StepProcess::Process::prepareForceStep)
+    //teb planner
+    tf::StampedTransform odom_foot_frame;
+     /***/
+    try
     {
-      if (!process_.prepareNavStepResult)
-      {
-        ROS_DEBUG_NAMED("guiway", "prepare nav");
-        if (!process_.prepareNavStepInit)
-        {
-          process_.prepareNavStepInit = true;
-          turnBool = true;
-          slowdownBool = true;
-          arriveturnBool = false;
-          process_.prepareNavStepProcessing = true;
-          back_dist_ = 0.02;
-          yawThrehold = yawThrehold_;
-          vel_line = prepare_lineVel_;
-          vel_angle = prepare_angleVel_;
-          /*** 确定行进方向 ***/
-          if (direction_ == docking_direction::forward)
-          {
-            if (prepareNav_foot_frame.inverse().getOrigin().getX() < 0)
-              direction = docking_direction::backward;
-            else
-              direction = direction_;
-          }
-          else if (direction_ == docking_direction::backward)
-          {
-            if (prepareNav_foot_frame.inverse().getOrigin().getX() > 0)
-              direction = docking_direction::forward;
-            else
-              direction = direction_;
-          }
-        }
-        target_foot_frame = prepareNav_foot_frame;
-      }
-      else if (!process_.prepareStepResult)
-      {
-        ROS_DEBUG_NAMED("guiway", "prepare");
-        if (!process_.prepareStepInit)
-        {
-          process_.prepareStepInit = true;
-          direction = direction_;
-          turnBool = true;
-          slowdownBool = false;
-          arriveturnBool = false;
-          process_.prepareStepProcessing = true;
-          back_dist_ = 0.01;
-          yawThrehold = 0.1;
-          vel_line = prepare_lineVel_;
-          vel_angle = prepare_angleVel_;
-        }
-        target_foot_frame = prepare_foot_frame;
-      }
-      else if (!process_.portStepResult)
-      {
-        ROS_DEBUG_NAMED("guiway", "port");
-        if (!process_.portStepInit)
-        {
-          process_.portStepInit = true;
-          direction = direction_;
-          turnBool = false;
-          slowdownBool = true;
-          arriveturnBool = true;
-          process_.portStepProcessing = true;
-          back_dist_ = req->back_dist;
-          yawThrehold = yawThrehold_;
-          vel_line = vel_line_;
-          vel_angle = vel_angle_;
-        }
-        target_foot_frame = port_foot_frame;
-      }
+      listerner_.waitForTransform("odom", "base_footprint", ros::Time(0), ros::Duration(10.0));
+      listerner_.lookupTransform("odom", "base_footprint", ros::Time(0), odom_foot_frame);
+      initial_pos.x()  = odom_foot_frame.getOrigin().getX();
+      initial_pos.y()  = odom_foot_frame.getOrigin().getY();
+      initial_pos.theta()  = tf::getYaw(odom_foot_frame.getRotation());
     }
-    else if (process_.process == StepProcess::Process::prepareStep)
+    catch (tf::TransformException ex)
     {
-      if (!process_.prepareNavStepResult)
-      {
-        ROS_DEBUG_NAMED("guiway", "prepare nav");
-        if (!process_.prepareNavStepInit)
-        {
-          process_.prepareNavStepInit = true;
-          turnBool = true;
-          slowdownBool = false;
-          arriveturnBool = false;
-          process_.prepareNavStepProcessing = true;
-          back_dist_ = 0.1;
-          yawThrehold = yawThrehold_;
-          vel_line = prepare_lineVel_;
-          vel_angle = prepare_angleVel_;
-          /*** 确定行进方向 ***/
-          direction = direction_;
-        }
-        target_foot_frame = prepareNav_foot_frame;
-      }
-      else if (!process_.prepareStepResult)
-      {
-        ROS_DEBUG_NAMED("guiway", "prepare");
-        if (!process_.prepareStepInit)
-        {
-          process_.prepareStepInit = true;
-          direction = direction_;
-          turnBool = false;
-          slowdownBool = false;
-          arriveturnBool = false;
-          process_.prepareStepProcessing = true;
-          back_dist_ = 0.00;
-          yawThrehold = 0.1;
-          vel_line = prepare_lineVel_;
-          vel_angle = prepare_angleVel_;
-        }
-        target_foot_frame = prepare_foot_frame;
-      }
-      else if (!process_.portStepResult)
-      {
-        ROS_DEBUG_NAMED("guiway", "port");
-        if (!process_.portStepInit)
-        {
-          process_.portStepInit = true;
-          direction = direction_;
-          turnBool = false;
-          slowdownBool = true;
-          arriveturnBool = true;
-          process_.portStepProcessing = true;
-          back_dist_ = req->back_dist;
-          yawThrehold = yawThrehold_;
-          vel_line = vel_line_;
-          vel_angle = vel_angle_;
-        }
-        target_foot_frame = port_foot_frame;
-      }
-    }
-    else if (process_.process == StepProcess::Process::portStep)
-    {
-      if (!process_.prepareStepResult)
-      {
-        ROS_DEBUG_NAMED("guiway", "prepare");
-        if (!process_.prepareStepInit)
-        {
-          process_.prepareStepInit = true;
-          direction = direction_;
-          turnBool = true;
-          slowdownBool = false;
-          arriveturnBool = false;
-          process_.prepareStepProcessing = true;
-          back_dist_ = 0.00;
-          yawThrehold = 0.1;
-          vel_line = prepare_lineVel_;
-          vel_angle = prepare_angleVel_;
-        }
-        target_foot_frame = prepare_foot_frame;
-      }
-      else if (!process_.portStepResult)
-      {
-        ROS_DEBUG_NAMED("guiway", "port");
-        if (!process_.portStepInit)
-        {
-          process_.portStepInit = true;
-          direction = direction_;
-          turnBool = false;
-          slowdownBool = true;
-          arriveturnBool = true;
-          process_.portStepProcessing = true;
-          back_dist_ = req->back_dist;
-          yawThrehold = yawThrehold_;
-          vel_line = vel_line_;
-          vel_angle = vel_angle_;
-        }
-        target_foot_frame = port_foot_frame;
-      }
+      initial_pos.x()  = 0;
+      initial_pos.y()  = 0;
+      initial_pos.theta()  = 0;
+      ROS_ERROR("can't find transform 'odom','base_link'");
     }
 
-    /*** 获取foot_target_frame的yaw ***/
-    double roll, pitch, yaw;
-    tf::Matrix3x3(target_foot_frame.inverse().getRotation()).getRPY(roll, pitch, yaw);
+    //
+    tf::Transform goal_robot_frame ;
+    tf::Transform goal_nav_frame ;
+    goal_robot_frame = odom_port_frame_.inverse()*odom_foot_frame;
+    PoseSE2 goal_cooked(goal_pos);
 
-    /*** 初始化检测器 ***/
-    double detector_y_coordinate =
-        (direction == docking_direction::backward) ? -detector_y_coordinate_ : detector_y_coordinate_;
-    double percent;
-    initDetector(percent, target_foot_frame, detector_y_coordinate);
-    percent = (direction == docking_direction::backward) ? -percent : percent; //尾部对接，左右检测器的权重正负号相反
-
-    //    ROS_INFO("percent:%f", percent);
-
-    /*           X           forward      X      backward
-    *  foot_port X  port +            +   X   +            +
-    *            X       |            |   X   |            |
-    *            X       v            v   X   v            v
-    *            X                        X
-    *            X  foot +-->      <--+   X   +-->      <--+
-    *            X                        X
-    *  yaw       X       >=0         <0   X   >=0         <0
-    *            X                        X
-    *            X                        X
-    *  percent   X       >=0         <0   X   >=0         <0 */
-    double allowable_yaw = fabs(getDiffAngle(fabs(yaw), M_PI_2));
-    if (process_.portStepProcessing)
+    int itr_time = 0;
+    int cfg_max_time = 10;
+    double cfg_x = 1;
+    double cfg_y = 0.5;
+    double cfg_footprint_R = 1;
+    tf::Quaternion q;
+    if(goal_robot_frame.getOrigin().getX() < -cfg_x||fabs(goal_robot_frame.getOrigin().getY())>cfg_y)
     {
-      if ((direction == docking_direction::forward && yaw >= 0 && percent >= 0 && allowable_yaw < 0.3) ||
-          (direction == docking_direction::forward && yaw < 0 && percent < 0 && allowable_yaw < 0.3) ||
-          (direction == docking_direction::backward && yaw >= 0 && percent < 0 && allowable_yaw < 0.3) ||
-          (direction == docking_direction::backward && yaw < 0 && percent >= 0 && allowable_yaw < 0.3)) // 5du
+      if(goal_robot_frame.getOrigin().getX()<-cfg_x&&fabs(goal_robot_frame.getOrigin().getY())<cfg_y)
       {
-        ROS_INFO("yaw:%f, allowable_yaw:%f, percent:%f", yaw, allowable_yaw, percent);
-        percent = 0.0;
+        goal_nav_frame.setOrigin(tf::Vector3(-cfg_x - cfg_footprint_R,-cfg_y - cfg_footprint_R,0)); 
+        q.setRPY(0,0,-M_PI/2);
+        goal_nav_frame.setRotation(q);
       }
+      else if(goal_robot_frame.getOrigin().getX()< cfg_x&&goal_robot_frame.getOrigin().getY() < -cfg_y)
+      {
+        goal_nav_frame.setOrigin(tf::Vector3(cfg_x + cfg_footprint_R,-cfg_y - cfg_footprint_R,0)); 
+        q.setRPY(0,0,0);
+        goal_nav_frame.setRotation(q);
+      }
+      else if(goal_robot_frame.getOrigin().getX()< cfg_x&&goal_robot_frame.getOrigin().getY() > cfg_y)
+      {
+        goal_nav_frame.setOrigin(tf::Vector3(cfg_x + cfg_footprint_R,cfg_y + cfg_footprint_R,0)); 
+        q.setRPY(0,0,0);
+        goal_nav_frame.setRotation(q);
+      }
+      else if(goal_robot_frame.getOrigin().getX()> cfg_x&&fabs(goal_robot_frame.getOrigin().getY()) > cfg_y)
+      {
+        goal_nav_frame.setOrigin(tf::Vector3(cfg_x + cfg_footprint_R,0,0)); 
+        q.setRPY(0,0,0);
+        goal_nav_frame.setRotation(q);
+      }
+      tf::Transform odom_goal_frame;
+      odom_goal_frame  = odom_port_frame_*goal_nav_frame; 
+      goal_cooked.x()  = odom_goal_frame.getOrigin().getX();
+      goal_cooked.y()  = odom_goal_frame.getOrigin().getY();
+      goal_cooked.theta()  = tf::getYaw(odom_goal_frame.getRotation());
     }
+    //ROS_INFO("itr %d",itr_time);
+    //publish cmd_vel
+    double vy;
+    planner_->setplan(initial_pos,realTime_twist_,goal_cooked);
 
-    /*** 减速识别特征板 ***/
-    //        if (process_.portStepProcessing && fabs(target_foot_frame.getOrigin().x()) <= half_length_ + 0.45)
-    //        {
-    //          vel_line = 0.01;
-    //          vel_angle = 0.15;
-    //        }
-    //        if (process_.portStepProcessing && fabs(target_foot_frame.getOrigin().x()) <= half_length_ + 0.34)
-    //        {
-    //          vel_line = req->vel_line;
-    //          vel_angle = req->vel_angle;
-    //          if ((vel_line == 0) || (vel_angle == 0))
-    //          {
-    //            vel_line = 0.1;
-    //            vel_angle = 0.4;
-    //          }
-    //        }
-
-    /*** gui way detected ***/
+    if(planner_->getVelocityCommand(twist.linear.x,vy,twist.angular.z,1) == false)
+    {
+      //plan failed ,set vel = 0
+      twist.linear.x  = 0;
+      twist.angular.z = 0;
+    }
+ 
+    //end(teb planner)
     avoidType_ = AvoidType::RECTANGLE;
-    double ang = vel_angle * percent;
-    double vel = vel_line * (1 - fabs(percent));
-    if (vel == 0.0)
-      vel = 0.1;
-    twist.angular.z = ang;
-    twist.linear.x = (direction == docking_direction::backward) ? -vel : vel;
-    //    ROS_INFO("angel vel:%f", twist.angular.z);
 
-    /*** slow down the linear speed ***/
-    if ((target_foot_frame.getOrigin().x() <= back_dist_ + 0.1) && slowdownBool)
+    if (hypot(initial_pos.x() - goal_pos.x(),initial_pos.y() - goal_pos.y()) <= back_dist_)
     {
-      if (twist.linear.x > 0.0)
-        twist.linear.x = 0.05;
-      else if (twist.linear.x < 0.0)
-        twist.linear.x = -0.05;
-    }
-
-    /*** arrive target position ***/
-    if (target_foot_frame.getOrigin().x() <= back_dist_)
-    {
-      avoidType_ = AvoidType::RECTANGLE;
-
-      double dtYaw1 = fabs(getDiffAngle(yaw, M_PI));
-      double dtYaw2 = fabs(getDiffAngle(yaw, 0.0));
-      if (direction == docking_direction::forward && dtYaw1 > yawThrehold && arriveturnBool)
-      {
-        ROS_DEBUG_NAMED("guiway", "arrive forward turn:%f, yawThrehold:%f, dtYaw1:%f", yaw, yawThrehold, dtYaw1);
-        twist.linear.x = 0;
-        double s_acc = (pow(angleVel_turn, 2) - pow(0.2, 2)) / (2 * aW_acc);
-        if (!turnMark)
-          initYaw = dtYaw1;
-        turnMark = true;
-        double diff_s_acc = fabs(getDiffAngle(dtYaw1, initYaw));
-
-        double s2_dcc = (pow(0.05, 2) - pow(angleVel_turn, 2)) / (2 * -aW_dcc);
-        double diff_s_dcc = fabs(getDiffAngle(dtYaw1, yawThrehold));
-        if (diff_s_dcc > fabs(s2_dcc))
-        {
-          if (diff_s_acc < s_acc)
-          {
-            double v = sqrt(pow(0.2, 2) + diff_s_acc * 2 * aW_acc);
-            twist.angular.z = (yaw > 0 ? -v : v);
-            ROS_DEBUG_NAMED("guiway", "v:%f, dt:%f, dtYaw1:%f, initYaw:%f, diff_s_acc:%f", v, dt, dtYaw1, initYaw,
-                            diff_s_acc);
-          }
-          else
-            twist.angular.z = (yaw > 0 ? -angleVel_turn : angleVel_turn);
-        }
-        else
-        {
-          double v = sqrt(pow(0.05, 2) - diff_s_dcc * 2 * -aW_dcc);
-          twist.angular.z = (yaw > 0 ? -v : v);
-          ROS_DEBUG_NAMED("guiway", "v:%f, dt:%f, dtYaw1:%f, diff_s_dcc:%f", v, dt, dtYaw1, diff_s_dcc);
-        }
-      }
-      else if (direction == docking_direction::backward && dtYaw2 > yawThrehold && arriveturnBool)
-      {
-        ROS_DEBUG_NAMED("guiway", "arrive backward turn:%f, yawThrehold:%f, dtYaw2:%f", yaw, yawThrehold, dtYaw2);
-        twist.linear.x = 0;
-        double s_acc = (pow(angleVel_turn, 2) - pow(0.2, 2)) / (2 * aW_acc);
-        if (!turnMark)
-          initYaw = dtYaw2;
-        turnMark = true;
-        double diff_s_acc = fabs(getDiffAngle(dtYaw2, initYaw));
-
-        double s_dcc = (pow(0.05, 2) - pow(angleVel_turn, 2)) / (2 * -aW_dcc);
-        double diff_s_dcc = fabs(getDiffAngle(dtYaw2, yawThrehold));
-        if (diff_s_dcc > fabs(s_dcc))
-        {
-          if (diff_s_acc < s_acc)
-          {
-            double v = sqrt(pow(0.2, 2) + diff_s_acc * 2 * aW_acc);
-            twist.angular.z = (yaw > 0 ? v : -v);
-            ROS_DEBUG_NAMED("guiway", "v:%f, dt:%f, dtYaw2:%f, initYaw:%f, diff_s_acc:%f", v, dt, dtYaw2, initYaw,
-                            diff_s_acc);
-          }
-          else
-            twist.angular.z = (yaw > 0 ? angleVel_turn : -angleVel_turn);
-        }
-        else
-        {
-          double v = sqrt(pow(0.05, 2) - diff_s_dcc * 2 * -aW_dcc);
-          twist.angular.z = (yaw > 0 ? v : -v);
-          ROS_DEBUG_NAMED("guiway", "v:%f, dt:%f, dtYaw2:%f, diff_s_dcc:%f", v, dt, dtYaw2, diff_s_dcc);
-        }
-      }
-      else
-      {
-        turnMark = false;
-        if (process_.prepareNavStepProcessing)
-        {
-          process_.prepareNavStepProcessing = false;
-          process_.prepareNavStepResult = true;
-        }
-        if (process_.prepareStepProcessing)
-        {
-          process_.prepareStepProcessing = false;
-          process_.prepareStepResult = true;
-        }
-        if (process_.portStepProcessing)
-        {
-          process_.portStepProcessing = false;
-          process_.portStepResult = true;
-          ROS_INFO("back_dist: %f\ttarget_foot_frame: %f", back_dist_, target_foot_frame.getOrigin().x());
-          motion_status_ = success;
-          break;
-        }
-      }
-    }
-
-    /***
-     * turn first
-     ***/
-    double dtYaw1 = fabs(getDiffAngle(yaw, M_PI));
-    double dtYaw2 = fabs(getDiffAngle(yaw, 0.0));
-    if (turnBool && direction == docking_direction::forward && fabs(dtYaw1) > yawThrehold)
-    {
-      avoidType_ = AvoidType::ROUND;
-      ROS_DEBUG_NAMED("guiway", "turn first:%f, dtYaw1:%f", yaw, dtYaw1);
-      twist.linear.x = 0;
-      double s_acc = (pow(angleVel_turn, 2) - pow(0.05, 2)) / (2 * aW_acc);
-      if (!turnMark)
-        initYaw = dtYaw1;
-      turnMark = true;
-      double diff_s_acc = fabs(getDiffAngle(dtYaw1, initYaw));
-
-      double s_dcc = (pow(0.05, 2) - pow(angleVel_turn, 2)) / (2 * -aW_dcc);
-      double diff_s_dcc = fabs(getDiffAngle(fabs(dtYaw1), yawThrehold));
-      if (diff_s_dcc > fabs(s_dcc))
-      {
-        if (diff_s_acc < s_acc)
-        {
-          double v = sqrt(pow(0.05, 2) + diff_s_acc * 2 * aW_acc);
-          twist.angular.z = (yaw > 0 ? -v : v);
-          ROS_DEBUG_NAMED("guiway", "v:%f, dt:%f, dtYaw1:%f, initYaw:%f, diff_s_acc:%f", v, dt, dtYaw1, initYaw,
-                          diff_s_acc);
-        }
-        else
-          twist.angular.z = (yaw > 0 ? -angleVel_turn : angleVel_turn);
-      }
-      else
-      {
-        double v = sqrt(pow(0.05, 2) - diff_s_dcc * 2 * -aW_dcc);
-        twist.angular.z = (yaw > 0 ? -v : v);
-        ROS_DEBUG_NAMED("guiway", "v:%f, dt:%f, dtYaw1:%f", v, dt, dtYaw1);
-      }
-      ROS_DEBUG_NAMED("guiway", "S_acc:%f, S_dcc:%f", s_acc, s_dcc);
-    }
-    else if (turnBool && direction == docking_direction::backward && dtYaw2 > yawThrehold)
-    {
-      avoidType_ = AvoidType::ROUND;
-      ROS_DEBUG_NAMED("guiway", "turn first:%f, dtYaw2:%f", yaw, dtYaw2);
-      twist.linear.x = 0;
-      double s_acc = (pow(angleVel_turn, 2) - pow(0.05, 2)) / (2 * aW_acc);
-      if (!turnMark)
-        initYaw = dtYaw2;
-      turnMark = true;
-      double diff_s_acc = fabs(getDiffAngle(dtYaw2, initYaw));
-
-      double s_dcc = (pow(0.05, 2) - pow(angleVel_turn, 2)) / (2 * -aW_dcc);
-      double diff_s_dcc = fabs(getDiffAngle(dtYaw2, yawThrehold));
-      if (diff_s_dcc > fabs(s_dcc))
-      {
-        if (diff_s_acc < s_acc)
-        {
-          double v = sqrt(pow(0.05, 2) + diff_s_acc * 2 * aW_acc);
-          twist.angular.z = (yaw > 0 ? v : -v);
-          ROS_DEBUG_NAMED("guiway", "v:%f, dt:%f, dtYaw2:%f, initYaw:%f, diff_s_acc:%f", v, dt, dtYaw2, initYaw,
-                          diff_s_acc);
-        }
-        else
-          twist.angular.z = (yaw > 0 ? angleVel_turn : -angleVel_turn);
-      }
-      else
-      {
-        double v = sqrt(pow(0.05, 2) - diff_s_dcc * 2 * -aW_dcc);
-        twist.angular.z = (yaw > 0 ? v : -v);
-        ROS_DEBUG_NAMED("guiway", "v:%f, dt:%f, dtYaw2:%f", v, dt, dtYaw2);
-      }
-      ROS_DEBUG_NAMED("guiway", "S_acc:%f, S_dcc:%f", s_acc, s_dcc);
-    }
-    else
-    {
-      if (turnBool)
-        turnMark = false;
-      turnBool = false;
+      motion_status_ = success;
+      ROS_INFO("goal is reached !");
+      break;
     }
 
     /*** danger detected and paused ***/
@@ -816,9 +286,9 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
       twist.linear.x = 0;
       twist.angular.z = 0;
 
-      ROS_ERROR_THROTTLE(3, "find obstacle! fabs(yaw):%f", fabs(yaw));
+      ROS_ERROR_THROTTLE(3, "find obstacle!");
     }
-
+ 
     //语音播报，时间控制
     if (avoiding && !avoiding_feedback)
     {
@@ -857,7 +327,6 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
       as_->publishFeedback(feedback);
     }
     last_avoiding = avoiding;
-
     /*** 剩余距离 ***/
     aic_auto_dock::gui_way2Feedback feedback;
     feedback.status = aic_auto_dock::gui_way2Feedback::EXECUTING;
@@ -869,7 +338,6 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
       feedback.step_process = aic_auto_dock::gui_way2Feedback::PREPARE_STEP;
     else if (process_.portStepProcessing)
       feedback.step_process = aic_auto_dock::gui_way2Feedback::PORT_STEP;
-
     as_->publishFeedback(feedback);
 
     /*** display obstacle avoidance area ***/
@@ -880,7 +348,6 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
       else
         pubMarkerCarStraightSquare();
     }
-
     /***
      * cancle or new goal
      ***/
@@ -893,7 +360,6 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
       laser_sub_.shutdown();
       return;
     }
-
     ROS_DEBUG_NAMED("guiway", " twist.linear.x:%f", twist.linear.x);
     twist_pub_.publish(twist);
   }
@@ -938,56 +404,6 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
   }
 }
 
-void gui_way::initStepProcess(const double& allowable_dist)
-{
-  /***
-  *                 +   +
-  *                 |   |
-  *                 |   |
-  *   prepareNavMark|   |prepareNavMark
-  *                 |   |
-  *                 |   |
-  *                 |   |
-  *      -- -- -- --+   +-- -- -- -- linePosition
-  *                 |   |
-  * preparePosition_|   |
-  *          *******|   |*******
-  *                 |   |
-  *                 +---+
-  *
-  *           prepareForeceNavMark
-  *
-  *             X      XXXXXXXXXX
-  *              X    X
-  *               X  X
-  *                 X
-  ***/
-
-  /*** 判断初始步骤 ***/
-  double linePosition = preparePosition_ + 0.1;
-  bool prepareForceNavMark = (port_foot_frame.getOrigin().getX() < linePosition) &&
-                             !((fabs(port_foot_frame.getOrigin().getY()) < allowable_dist) &&
-                               (port_foot_frame.getOrigin().getX() < linePosition) &&
-                               (port_foot_frame.getOrigin().getX() > linePosition - allowable_dist));
-  bool prepareNavMark = (port_foot_frame.getOrigin().getX() > linePosition) &&
-                        (fabs(port_foot_frame.getOrigin().getY()) > allowable_dist);
-  if (prepareForceNavMark)
-  {
-    ROS_WARN("prepare force nav");
-    process_.process = StepProcess::Process::prepareForceStep;
-  }
-  else if (prepareNavMark)
-  {
-    ROS_WARN("prepare nav");
-    process_.process = StepProcess::Process::prepareStep;
-  }
-  else
-  {
-    ROS_WARN("port, port_foot_frame.getOrigin().getY():%f", port_foot_frame.getOrigin().getY());
-    process_.process = StepProcess::Process::portStep;
-  }
-}
-
 void gui_way::odomCallback(const nav_msgs::OdometryConstPtr& msg)
 {
   tf::Quaternion q;
@@ -995,6 +411,7 @@ void gui_way::odomCallback(const nav_msgs::OdometryConstPtr& msg)
   tf::Vector3 vec(msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z);
   realTime_odom_.setOrigin(vec);
   realTime_odom_.setRotation(q);
+  realTime_twist_ = msg->twist.twist;
 }
 
 void gui_way::setFootprintCallback(const geometry_msgs::Polygon& msg)
@@ -1107,7 +524,6 @@ bool gui_way::goalAccept()
         }
 
         tf::poseMsgToTF(goal->pose, odom_port_frame_);
-        initFrame();
       }
       else if ((goal->type == aic_auto_dock::gui_way2Goal::STRAIGHT) ||
                (goal->type == aic_auto_dock::gui_way2Goal::BACK))
@@ -1413,23 +829,78 @@ bool gui_way::loadParamFromYaml()
   }
   return true;
 }
-
-void gui_way::cleanProcess()
+//teb 
+void gui_way::CB_simple_goal(const geometry_msgs::PoseStampedConstPtr& msg)
 {
-  process_.prepareNavStepProcessing = false;
-  process_.prepareNavStepResult = false;
-  process_.prepareNavStepInit = false;
+  PoseSE2 goal_pos;
+  tf::StampedTransform odom_map_frame;
+  tf::Transform odom_goal_frame;
+  tf::Transform map_goal_frame;
+  tf::Quaternion q;
+  q.setRPY(0,0,tf::getYaw(msg.get()->pose.orientation));
+  listerner_.waitForTransform("odom", "map", ros::Time(0), ros::Duration(10.0));
+  listerner_.lookupTransform("odom", "map", ros::Time(0), odom_map_frame);
+  map_goal_frame.getOrigin().setValue(msg->pose.position.x,msg->pose.position.y,0);
+  map_goal_frame.setRotation(q);
+  odom_goal_frame  = odom_map_frame*map_goal_frame;
+  goal_pos.x()                       = odom_goal_frame.getOrigin().getX();
+  goal_pos.y()                       = odom_goal_frame.getOrigin().getY();
+  goal_pos.theta()                   = tf::getYaw(odom_goal_frame.getRotation());
+  ROS_INFO("goal pose %f %f %f",goal_pos.x(),goal_pos.y(),goal_pos.theta());
 
-  process_.prepareStepProcessing = false;
-  process_.prepareStepResult = false;
-  process_.prepareStepInit = false;
+  aic_auto_dock::gui_way2Goal guiway_goal;
+  geometry_msgs::Pose goal_msg;
+  tf::poseTFToMsg(odom_goal_frame,goal_msg);
+    // goal_msg.position.x = odom_goal_frame.getOrigin().getX();
+    // goal_msg.position.y = odom_goal_frame.getOrigin().getY();
+    // goal_msg.orientation.x = odom_goal_frame.getRotation().getX();
+    // goal_msg.orientation.y = odom_goal_frame.getRotation().getY();
+    // goal_msg.orientation.z = odom_goal_frame.getRotation().getZ();
+    // goal_msg.orientation.w = odom_goal_frame.getRotation().getW();
+  //aic_auto_dock::gui_way2Goal::BACK;
+  //aic_auto_dock::gui_way2Goal::STRAIGHT;
+  guiway_goal.type = aic_auto_dock::gui_way2Goal::STRAIGHT;
+  guiway_goal.pose = goal_msg;
 
-  process_.portStepProcessing = false;
-  process_.portStepResult = false;
-  process_.portStepInit = false;
+  guiway_goal.vel_line = 6;
+  guiway_goal.vel_angle = 1;
+  guiway_goal.back_dist = 0.1;//fabs(half_length_);
+  guiway_goal.obstacle_dist = 0.1;//fabs(half_length_);
+  //guiway_goal.preparePosition = 0.1;
+  simple_goal_client_->waitForServer();
+  ROS_INFO("wait server succeed");
+
+  double cfg_x = 1;
+  double cfg_y = 0.5;
+  //add obstacles
+  planner_->clearObstacle();
+  q.setRPY(0,0,0);
+  tf::Transform goal_obs_frame(q,tf::Vector3(cfg_x,-cfg_y,0));
+  tf::Transform goal_obs1_frame(q,tf::Vector3(-cfg_x,-cfg_y,0));
+  tf::Transform odom_obs_frame = odom_goal_frame*goal_obs_frame;
+  tf::Transform odom_obs1_frame = odom_goal_frame*goal_obs1_frame;
+  planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
+                            odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
+
+  goal_obs_frame.setOrigin(tf::Vector3(-cfg_x,-cfg_y,0));
+  goal_obs1_frame.setOrigin(tf::Vector3(-cfg_x,cfg_y,0));
+  odom_obs_frame = odom_goal_frame*goal_obs_frame;
+  odom_obs1_frame = odom_goal_frame*goal_obs1_frame;
+  planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
+                            odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
+
+  goal_obs_frame.setOrigin(tf::Vector3(-cfg_x,cfg_y,0));
+  goal_obs1_frame.setOrigin(tf::Vector3(cfg_x,cfg_y,0));
+  odom_obs_frame = odom_goal_frame*goal_obs_frame;
+  odom_obs1_frame = odom_goal_frame*goal_obs1_frame;
+  planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
+                            odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
+
+  simple_goal_client_->sendGoal(guiway_goal);
 }
+//end(teb)
 
-int main_aic_dock(int argc, char** argv)
+int main(int argc, char** argv)
 {
   ros::init(argc, argv, "guiWay");
   ros::NodeHandle nh;
@@ -1480,7 +951,6 @@ int main_aic_dock(int argc, char** argv)
 // ============= Global Variables ================
 // Ok global variables are bad, but here we only have a simple testing node.
 PlannerInterfacePtr planner;
-teb_planner* my_planner;
 TebVisualizationPtr visual;
 std::vector<ObstaclePtr> obst_vector;
 ViaPointContainer via_points;
@@ -1490,7 +960,7 @@ ros::Subscriber custom_obst_sub;
 ros::Subscriber via_points_sub;
 ros::Subscriber clicked_points_sub;
 ros::Subscriber init_pose_sub;
-ros::Subscriber goal_pose_sub;
+ros::Subscriber goal_pose_sub;;
 ros::Subscriber odom_sub;
 ros::Subscriber scan_sub;
 ros::Publisher velocity_pub;
@@ -1512,16 +982,14 @@ void CB_goal_pose(const geometry_msgs::PoseStampedConstPtr& msg);
 void CB_odom(const nav_msgs::Odometry::ConstPtr& msg);
 void scan_callback(const sensor_msgs::LaserScanConstPtr& msg);
 void scan_to_obs(std::vector<ObstaclePtr> &obst_vec);
-// =========== user qihao =============
 PoseSE2 initial_pos(-4,0,0);
 PoseSE2 goal_pos(4,0,0);
 geometry_msgs::Twist g_cmd_vel;
 nav_msgs::Odometry robot_odom;
 geometry_msgs::Polygon footprint;
-std::vector<PoseSE2> global_path_left;
-std::vector<PoseSE2> global_path_right;
+teb_planner* my_planner;
 // =============== Main function =================
-int main( int argc, char** argv )
+int main_teb( int argc, char** argv )
 {
   ros::init(argc, argv, "test_optim_node");
   ros::NodeHandle n("~");
@@ -1534,7 +1002,6 @@ int main( int argc, char** argv )
   my_planner->setLineObstacle(-0.5, 0.6,-0.5, 2.6);
   my_planner->setLineObstacle(0.5, 0.6,0.5, 2.6);
   my_planner->setLineObstacle(-0.5, 0.6,0.5, 0.6);
-  //global_path_left.push_back(boost::make_shared<PoseSE2>())
 
   ros::Timer cycle_timer = n.createTimer(ros::Duration(0.05), CB_mainCycle);
   ros::Timer publish_timer = n.createTimer(ros::Duration(0.1), \
@@ -1599,47 +1066,7 @@ void CB_mainCycle(const ros::TimerEvent& e)
     ROS_INFO("goal is reached !");
     return;
   }
-
-  // via points
-  //insert via point
-  // tf::Quaternion q;
-  // q.setRPY(0, 0, goal_pos.theta());
-  // tf::Transform odom_goal(q, tf::Vector3(goal_pos.x(), goal_pos.y(), 0));
-  // q.setRPY(0, 0, 0);
-  // tf::Transform goal_viapoint_frame(q, tf::Vector3(0, 0, 0));
-  // tf::Transform map_viapoint_frame(q, tf::Vector3(0, 0, 0));
-  // tf::Transform map_initial(q, tf::Vector3(initial_pos.x(), initial_pos.y(), 0));
-  // tf::Transform goal_initial_frame   = odom_goal.inverse()*map_initial;
-  // via_points.clear();
-  // double param_ds = 0.1;
-  // double param_via_x = 2;
-  // double tmp = goal_viapoint_frame.getOrigin().getX();
-  // while ((tmp+param_ds<param_via_x&&fabs(goal_initial_frame.getOrigin().getY())>param_ds)||
-  //         (tmp+param_ds<goal_initial_frame.getOrigin().getX()&&fabs(goal_initial_frame.getOrigin().getY())<param_ds))
-  // {
-  //   tmp  += param_ds;
-  //   goal_viapoint_frame.getOrigin().setX(tmp);
-  //   map_viapoint_frame            = odom_goal*goal_viapoint_frame;
-  //   via_points.emplace_back(map_viapoint_frame.getOrigin().x(), map_viapoint_frame.getOrigin().y());
-  // }
-  // tmp  = goal_viapoint_frame.getOrigin().getY();
-  // while( fabs(tmp)+param_ds<fabs(goal_initial_frame.getOrigin().getY()))
-  // {
-  //   if (goal_initial_frame.getOrigin().getY()>0)
-  //   {
-  //     tmp  +=param_ds;
-  //     goal_viapoint_frame.getOrigin().setY(tmp);
-  //   }
-  //   else
-  //   {
-  //     tmp  -=param_ds;
-  //     goal_viapoint_frame.getOrigin().setY(tmp);
-  //   }
-  //   map_viapoint_frame            = odom_goal*goal_viapoint_frame;
-  //   via_points.emplace_back(map_viapoint_frame.getOrigin().x(), map_viapoint_frame.getOrigin().y());
-  // }
   //teb local planner
-
   //publish cmd_vel
   geometry_msgs::Twist cmd_vel;
   double vy;
@@ -1796,7 +1223,6 @@ void CB_goal_pose(const geometry_msgs::PoseStampedConstPtr& msg)
   goal_pos.x()                       = odom_goal_frame.getOrigin().getX();
   goal_pos.y()                       = odom_goal_frame.getOrigin().getY();
   goal_pos.theta()                   = tf::getYaw(odom_goal_frame.getRotation());
-
   ROS_INFO("goal pose %f %f %f",goal_pos.x(),goal_pos.y(),goal_pos.theta());
 
 }
@@ -1933,10 +1359,23 @@ void teb_planner::CB_publishCycle(const ros::TimerEvent& e)
   visual_->publishObstacles(obst_vector_);
   visual_->publishViaPoints(via_points_);
 }
+// Visualization loop
+void teb_planner::CB_publishCycle()
+{
+  planner_->visualize();//publish poses(path+time) and path 
+  visual_->publishObstacles(obst_vector_);
+  visual_->publishViaPoints(via_points_);
+}
 // set obstacle
 void teb_planner::setLineObstacle(float x0,float y0,float x1,float y1)
 {
   obst_vector_.push_back( boost::make_shared<LineObstacle>(x0, y0,x1, y1));
+}
+
+// set obstacle
+void teb_planner::clearObstacle()
+{
+  obst_vector_.clear();
 }
 
 bool teb_planner::isTrajFeasible(double vx, double vy, double omega, double look_ahead_time)
@@ -1996,3 +1435,146 @@ bool teb_planner::isTrajFeasible(double vx, double vy, double omega, double look
   // }
   return true;
 }
+
+bool teb_planner::isTrajFeasible(PoseSE2 robot_pos, PoseSE2 goal_pos)
+{
+  // std::vector<TrajectoryPointMsg> traj;  
+  // PoseSE2 predict_pose(robot_pos);
+  // TrajectoryPointMsg via_pos;
+  // via_pos.pose.position.x = robot_pos.x();
+  // via_pos.pose.position.y = robot_pos.y();
+  // double cfg_tolerate = config_.obstacles.min_obstacle_dist/2.0;
+  // double j = 0;
+  // double num_wpts = hypot(via_pos.pose.position.x- goal_pos.x(),via_pos.pose.position.y-goal_pos.y())/cfg_tolerate;
+  //  tf::Quaternion q;
+  // while(j-num_wpts<1e-6)
+  // {
+  //   via_pos.pose.position.x = robot_pos.x() + j / num_wpts * (goal_pos.x() - robot_pos.x());
+  //   via_pos.pose.position.y = robot_pos.y() + j / num_wpts * (goal_pos.y() - robot_pos.y());
+  //   q.setRPY(0,0,robot_pos.theta()+ j / num_wpts * (goal_pos.theta() - robot_pos.theta()));
+  //   tf::quaternionTFToMsg(q,via_pos.pose.orientation);
+  //   traj.push_back(via_pos);
+  //   j++;
+  // }
+  // for(auto pose:traj)
+  // {
+    // predict_pose.x()    = pose.pose.position.x;
+    // predict_pose.y()    = pose.pose.position.y;
+    // tf::quaternionMsgToTF(pose.pose.orientation,q);
+    // predict_pose.theta()    = tf::getYaw(q);
+    for (ObstContainer::const_iterator obst = obst_vector_.begin(); obst != obst_vector_.end(); ++obst)
+    {
+      boost::shared_ptr<LineObstacle> pobst = boost::dynamic_pointer_cast<LineObstacle>(*obst);   
+      if (!pobst)
+        continue;
+      double obs_dis = pobst->getMinimumDistance(robot_pos.position(),goal_pos.position());
+      //double obs_dis = robot_model_->calculateDistance(predict_pose,pobst.get());
+      if(obs_dis < 0.1)
+      {
+        return false;
+      }
+    }
+  // }
+
+  return true;
+}
+
+
+
+void teb_planner::setViaPoints(const nav_msgs::Path::ConstPtr& via_points_msg)
+{
+  ROS_INFO_ONCE("Via-points received. This message is printed once.");
+  via_points_.clear();
+  for (const geometry_msgs::PoseStamped& pose : via_points_msg->poses)
+  {
+    via_points_.emplace_back(pose.pose.position.x, pose.pose.position.y);
+  }
+}
+// void teb_planner::interpolatePath(nav_msgs::Path& path)
+// {
+//   std::vector<geometry_msgs::PoseStamped> temp_path;
+//   for (int i = 0; i < static_cast<int>(path.poses.size()-1); i++)
+//   {
+//     // calculate distance between two consecutive waypoints
+//     double x1 = path.poses[i].pose.position.x;
+//     double y1 = path.poses[i].pose.position.y;
+//     double x2 = path.poses[i+1].pose.position.x;
+//     double y2 = path.poses[i+1].pose.position.y;
+//     double dist =  hypot(x1-x2, y1-y2);
+//     int num_wpts = dist * waypoints_per_meter_;
+
+//     temp_path.push_back(path.poses[i]);
+//     geometry_msgs::PoseStamped p = path.poses[i];
+//     for (int j = 0; j < num_wpts - 2; j++)
+//     {
+//       p.pose.position.x = x1 + static_cast<double>(j) / num_wpts * (x2 - x1);
+//       p.pose.position.y = y1 + static_cast<double>(j) / num_wpts * (y2 - y1);
+//       temp_path.push_back(p);
+//     }
+//   }
+
+//   // update sequence of poses
+//   for (size_t i = 0; i < temp_path.size(); i++)
+//     temp_path[i].header.seq = static_cast<int>(i);
+
+//   temp_path.push_back(path.poses.back());
+//   path.poses = temp_path;
+// }
+
+
+// bool teb_planner::findGuiWayPath(nav_msgs::Path& path)
+// {
+//   //构建辅助节点
+//   vector<PoseSE2> nodes;
+//   double my_config_goal_inflation_x = 1.5;
+//   double my_config_goal_inflation_y = 1;
+//   double goal_inflation_x_   = my_config_goal_inflation_x;
+//   double goal_inflation_y_   = my_config_goal_inflation_y;
+//   //create nodes
+//   nodes.push_back(PoseSE2(goal_inflation_x_,0,M_PI/2));
+//   nodes.push_back(PoseSE2(goal_inflation_x_,-goal_inflation_y_,0));
+//   nodes.push_back(PoseSE2(goal_inflation_x_,goal_inflation_y_,0));
+//   nodes.push_back(PoseSE2(-goal_inflation_x_,-goal_inflation_y_,0));
+//   nodes.push_back(PoseSE2(-goal_inflation_x_,goal_inflation_y_,0));
+//   tf::Transform odom_goal;
+//   odom_goal.setOrigin(tf::Vector3(endpose_.x(),endpose_.y(),0));
+//   tf::Quaternion q(0,0,endpose_.theta());   
+//   odom_goal.setRotation(q);
+//   tf::Transform goal_node;
+//   tf::Transform odom_node;
+//   vector<PoseSE2> path_tmp;
+//   for(auto itr:nodes)
+//   {
+//     goal_node.setOrigin(tf::Vector3(itr.x(),itr.y(),0));
+//     q.setRPY(0,0,itr.theta());
+//     goal_node.setRotation(q);
+//     odom_node = odom_goal*goal_node;
+//     path_tmp.push_back(PoseSE2(odom_node.getOrigin().getX(),odom_node.getOrigin().getY(),\
+//                        odom_node.getRotation().getZ()));
+//   }
+//   //找到最近的节点
+//   int i = 0;
+//   double min_dis = 1e6;
+//   int min_node;
+//   double dis;
+//   for(auto itr:path_tmp)
+//   {
+//     dis = hypot(itr.x()-startpose_.x(),itr.y()-startpose_.y());
+//     if (dis<min_dis)
+//     {
+//       min_dis = dis;
+//       min_node = i;
+//     }
+//     i++;
+//   }
+//   if(min_node == 0)
+//   {
+    
+//   }
+//   geometry_msgs::PoseStamped pos_tmp;
+
+//   path.poses.push_back(pos_tmp);
+
+
+//   return true;
+// }
