@@ -134,7 +134,6 @@ private:
 
   double vel_line_, vel_angle_;
   //teb
-  PoseSE2 goal_robot_frame_;
   vector<PoseSE2> global_path_;
   double goal_inflation_x_,goal_inflation_y_;
 
@@ -154,7 +153,7 @@ class teb_planner
     void CB_publishCycle(const ros::TimerEvent& e);
     void CB_publishCycle();
     void setLineObstacle(float x0,float y0,float x1,float y1);
-    void setViaPoints(const nav_msgs::Path::ConstPtr& via_points_msg);
+    void setViaPoints(const nav_msgs::Path& via_points_msg);
     void clearObstacle();
     bool isTrajFeasible(double vx, double vy, double omega, double look_ahead_time);
     bool isTrajFeasible(PoseSE2 robot_pos, PoseSE2 goal_pos);

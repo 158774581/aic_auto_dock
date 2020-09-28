@@ -78,7 +78,11 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
   ROS_INFO("gui way accept goal");
 
   PoseSE2 initial_pos;
-  PoseSE2 goal_pos(req->pose);
+  PoseSE2 goal_pos;
+  double yaw;
+  tf::Quaternion q;
+  /*** 初始化目标点 ***/
+  tf::poseMsgToTF(req->pose, odom_port_frame_);
   /*** 方向 ***/
   if (req->type == aic_auto_dock::gui_way2Goal::STRAIGHT)
   {
@@ -87,7 +91,6 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
     dangerRange_xMin_ = -fabs(dangerRange_x_);
     dangerRange_yMax_ = fabs(dangerRange_y_);
     dangerRange_yMin_ = -fabs(dangerRange_y_);
-    goal_pos.theta()  = goal_pos.theta()>0? goal_pos.theta()-M_PI:goal_pos.theta()+M_PI;
   }
   else if (req->type == aic_auto_dock::gui_way2Goal::BACK)
   {
@@ -154,9 +157,6 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
   actionlib_status_ = executing;
   motion_status_ = empty;
 
-  /*** 初始化目标点 ***/
-  tf::poseMsgToTF(req->pose, odom_port_frame_);
-
   double angleVel_turn = angleVel_turn_;
   geometry_msgs::Twist twist;
   ros::Rate rate(20);
@@ -201,54 +201,53 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
       ROS_ERROR("can't find transform 'odom','base_link'");
     }
 
-    //
-    tf::Transform goal_robot_frame ;
-    tf::Transform goal_nav_frame ;
+    tf::Transform odom_goal_frame;
+    q.setRPY(0,0,0);
+    tf::Transform goal_robot_frame;
+    tf::Transform goal_nav_frame(q);
     goal_robot_frame = odom_port_frame_.inverse()*odom_foot_frame;
-    PoseSE2 goal_cooked(goal_pos);
-
-    int itr_time = 0;
-    int cfg_max_time = 10;
-    double cfg_x = 1;
-    double cfg_y = 0.5;
-    double cfg_footprint_R = 1;
-    tf::Quaternion q;
-    if(goal_robot_frame.getOrigin().getX() < -cfg_x||fabs(goal_robot_frame.getOrigin().getY())>cfg_y)
+    double cfg_x = 1.5;
+    double parabola_b = cfg_x;
+    //y=a(x-b)^2
+    double parabola_a = goal_robot_frame.getOrigin().getY()/pow(goal_robot_frame.getOrigin().getX()-parabola_b,2);
+    nav_msgs::Path path;
+    geometry_msgs::PoseStamped via_p;
+    double cfg_dx = 0.1;
+    double cfg_path_length = 1.5;
+    double path_length = 0;
+    for (double x=goal_robot_frame.getOrigin().getX();x>0;x=x-cfg_dx)
     {
-      if(goal_robot_frame.getOrigin().getX()<-cfg_x&&fabs(goal_robot_frame.getOrigin().getY())<cfg_y)
+      if(x < parabola_b)
       {
-        goal_nav_frame.setOrigin(tf::Vector3(-cfg_x - cfg_footprint_R,-cfg_y - cfg_footprint_R,0)); 
-        q.setRPY(0,0,-M_PI/2);
-        goal_nav_frame.setRotation(q);
+        goal_nav_frame.setOrigin(tf::Vector3(x,0.0,0.0));
+        path_length += cfg_dx;
       }
-      else if(goal_robot_frame.getOrigin().getX()< cfg_x&&goal_robot_frame.getOrigin().getY() < -cfg_y)
+      else
       {
-        goal_nav_frame.setOrigin(tf::Vector3(cfg_x + cfg_footprint_R,-cfg_y - cfg_footprint_R,0)); 
-        q.setRPY(0,0,0);
-        goal_nav_frame.setRotation(q);
+        goal_nav_frame.setOrigin(tf::Vector3(x,parabola_a*pow(x-parabola_b,2),0.0));
+        path_length += hypot(cfg_dx,2*parabola_a*(x-parabola_b)*cfg_dx);//dy = 2*a(x-b)*dt
       }
-      else if(goal_robot_frame.getOrigin().getX()< cfg_x&&goal_robot_frame.getOrigin().getY() > cfg_y)
-      {
-        goal_nav_frame.setOrigin(tf::Vector3(cfg_x + cfg_footprint_R,cfg_y + cfg_footprint_R,0)); 
-        q.setRPY(0,0,0);
-        goal_nav_frame.setRotation(q);
-      }
-      else if(goal_robot_frame.getOrigin().getX()> cfg_x&&fabs(goal_robot_frame.getOrigin().getY()) > cfg_y)
-      {
-        goal_nav_frame.setOrigin(tf::Vector3(cfg_x + cfg_footprint_R,0,0)); 
-        q.setRPY(0,0,0);
-        goal_nav_frame.setRotation(q);
-      }
-      tf::Transform odom_goal_frame;
       odom_goal_frame  = odom_port_frame_*goal_nav_frame; 
-      goal_cooked.x()  = odom_goal_frame.getOrigin().getX();
-      goal_cooked.y()  = odom_goal_frame.getOrigin().getY();
-      goal_cooked.theta()  = tf::getYaw(odom_goal_frame.getRotation());
+      via_p.pose.position.x = odom_goal_frame.getOrigin().getX();
+      via_p.pose.position.y = odom_goal_frame.getOrigin().getY();
+      path.poses.push_back(via_p);
+      if(path_length > cfg_path_length)
+      {
+        break;
+      }
+    
+    planner_->setViaPoints(path);
     }
-    //ROS_INFO("itr %d",itr_time);
-    //publish cmd_vel
+    goal_pos.x() = odom_goal_frame.getOrigin().getX();
+    goal_pos.y() = odom_goal_frame.getOrigin().getY();
+    goal_pos.theta() = tf::getYaw(odom_goal_frame.getRotation());
+    if (req->type == aic_auto_dock::gui_way2Goal::STRAIGHT)
+    {
+      goal_pos.theta() = goal_pos.theta()>0? goal_pos.theta()-M_PI:goal_pos.theta()+M_PI;
+    }
+ 
     double vy;
-    planner_->setplan(initial_pos,realTime_twist_,goal_cooked);
+    planner_->setplan(initial_pos,realTime_twist_,goal_pos);
 
     if(planner_->getVelocityCommand(twist.linear.x,vy,twist.angular.z,1) == false)
     {
@@ -260,7 +259,8 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
     //end(teb planner)
     avoidType_ = AvoidType::RECTANGLE;
 
-    if (hypot(initial_pos.x() - goal_pos.x(),initial_pos.y() - goal_pos.y()) <= back_dist_)
+    if (hypot(initial_pos.x() - odom_port_frame_.getOrigin().getX(),\
+        initial_pos.y() - odom_port_frame_.getOrigin().getY()) <= back_dist_)
     {
       motion_status_ = success;
       ROS_INFO("goal is reached !");
@@ -1481,11 +1481,11 @@ bool teb_planner::isTrajFeasible(PoseSE2 robot_pos, PoseSE2 goal_pos)
 
 
 
-void teb_planner::setViaPoints(const nav_msgs::Path::ConstPtr& via_points_msg)
+void teb_planner::setViaPoints(const nav_msgs::Path& via_points_msg)
 {
   ROS_INFO_ONCE("Via-points received. This message is printed once.");
   via_points_.clear();
-  for (const geometry_msgs::PoseStamped& pose : via_points_msg->poses)
+  for (const geometry_msgs::PoseStamped& pose : via_points_msg.poses)
   {
     via_points_.emplace_back(pose.pose.position.x, pose.pose.position.y);
   }
