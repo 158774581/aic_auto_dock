@@ -81,6 +81,7 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
   PoseSE2 goal_pos;
   double yaw;
   tf::Quaternion q;
+  bool reach_nav_pos = false;
   /*** 初始化目标点 ***/
   tf::poseMsgToTF(req->pose, odom_port_frame_);
   /*** 方向 ***/
@@ -201,46 +202,30 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
       ROS_ERROR("can't find transform 'odom','base_link'");
     }
 
-    tf::Transform odom_goal_frame;
+    tf::Transform odom_nav_frame(odom_port_frame_);
+    tf::Transform nav_robot_frame;
     q.setRPY(0,0,0);
-    tf::Transform goal_robot_frame;
     tf::Transform goal_nav_frame(q);
-    goal_robot_frame = odom_port_frame_.inverse()*odom_foot_frame;
-    double cfg_x = 1.5;
-    double parabola_b = cfg_x;
-    //y=a(x-b)^2
-    double parabola_a = goal_robot_frame.getOrigin().getY()/pow(goal_robot_frame.getOrigin().getX()-parabola_b,2);
-    nav_msgs::Path path;
-    geometry_msgs::PoseStamped via_p;
-    double cfg_dx = 0.1;
-    double cfg_path_length = 1.5;
-    double path_length = 0;
-    for (double x=goal_robot_frame.getOrigin().getX();x>0;x=x-cfg_dx)
+    double cfg_nav = 1.5;
+    double cfg_tolerate_dis = 0.5;
+    double cfg_tolerate_yaw = 0.2;
+    goal_nav_frame.setOrigin(tf::Vector3(cfg_nav,0.0,0.0));
+    odom_nav_frame  = odom_port_frame_*goal_nav_frame; 
+    nav_robot_frame  = odom_nav_frame.inverse()*odom_foot_frame;
+    if((hypot(nav_robot_frame.getOrigin().getX(),nav_robot_frame.getOrigin().getX())<cfg_tolerate_dis&&\
+       tf::getYaw(nav_robot_frame.getRotation())<cfg_tolerate_yaw)||reach_nav_pos == true)
     {
-      if(x < parabola_b)
-      {
-        goal_nav_frame.setOrigin(tf::Vector3(x,0.0,0.0));
-        path_length += cfg_dx;
-      }
-      else
-      {
-        goal_nav_frame.setOrigin(tf::Vector3(x,parabola_a*pow(x-parabola_b,2),0.0));
-        path_length += hypot(cfg_dx,2*parabola_a*(x-parabola_b)*cfg_dx);//dy = 2*a(x-b)*dt
-      }
-      odom_goal_frame  = odom_port_frame_*goal_nav_frame; 
-      via_p.pose.position.x = odom_goal_frame.getOrigin().getX();
-      via_p.pose.position.y = odom_goal_frame.getOrigin().getY();
-      path.poses.push_back(via_p);
-      if(path_length > cfg_path_length)
-      {
-        break;
-      }
-    
-    planner_->setViaPoints(path);
+      goal_pos.x() = odom_port_frame_.getOrigin().getX();
+      goal_pos.y() = odom_port_frame_.getOrigin().getY();
+      goal_pos.theta() = tf::getYaw(odom_port_frame_.getRotation());
+      reach_nav_pos = true;
     }
-    goal_pos.x() = odom_goal_frame.getOrigin().getX();
-    goal_pos.y() = odom_goal_frame.getOrigin().getY();
-    goal_pos.theta() = tf::getYaw(odom_goal_frame.getRotation());
+    else 
+    {
+      goal_pos.x() = odom_nav_frame.getOrigin().getX();
+      goal_pos.y() = odom_nav_frame.getOrigin().getY();
+      goal_pos.theta() = tf::getYaw(odom_nav_frame.getRotation());
+    }
     if (req->type == aic_auto_dock::gui_way2Goal::STRAIGHT)
     {
       goal_pos.theta() = goal_pos.theta()>0? goal_pos.theta()-M_PI:goal_pos.theta()+M_PI;
@@ -254,6 +239,9 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
       //plan failed ,set vel = 0
       twist.linear.x  = 0;
       twist.angular.z = 0;
+      ROS_WARN("teb_local_planner was not able to obtain a local plan for the current setting.");
+      motion_status_ = failed;
+      break;
     }
  
     //end(teb planner)
@@ -1330,7 +1318,7 @@ bool teb_planner::getVelocityCommand(double& vx, double& vy, double& omega, int 
   if (!success)
   {
     planner_->clearPlanner(); // force reinitialization for next time
-    ROS_WARN("teb_local_planner was not able to obtain a local plan for the current setting.");
+    //ROS_WARN("teb_local_planner was not able to obtain a local plan for the current setting.");
     return false;
   }
   if(planner_.get()->getVelocityCommand(vx, vy, omega,look_ahead_poses) ==true)
