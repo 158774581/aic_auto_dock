@@ -21,13 +21,7 @@
 #include <vector>
 #include <visualization_msgs/Marker.h>
 #include <aic_auto_dock/math/status.h>
-
-//reb 
-#include <teb_local_planner/teb_local_planner_ros.h>
-#include <interactive_markers/interactive_marker_server.h>
-#include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
-#include <ros/subscriber.h>
+#include <aic_auto_dock/aic_planner.h>
 
 typedef actionlib::SimpleActionClient< aic_auto_dock::gui_way2Action > Client_gui_way;
 //end (teb)
@@ -139,39 +133,6 @@ private:
 
   teb_planner* planner_;
   Client_gui_way* simple_goal_client_;
-};
-
-//plan in odom
-class teb_planner
-{
-  public:
-    teb_planner(ros::NodeHandle& nh);
-    ~teb_planner(){};
-    bool getVelocityCommand(double& vx, double& vy, double& omega, int look_ahead_poses);
-    bool setplan(PoseSE2& startpose,geometry_msgs::Twist& startVel,PoseSE2& endpose);
-    PlannerInterfacePtr getplanner(){return planner_;};
-    void CB_publishCycle(const ros::TimerEvent& e);
-    void CB_publishCycle();
-    void setLineObstacle(float x0,float y0,float x1,float y1);
-    void setViaPoints(const nav_msgs::Path& via_points_msg);
-    void clearObstacle();
-    bool isTrajFeasible(double vx, double vy, double omega, double look_ahead_time);
-    bool isTrajFeasible(PoseSE2 robot_pos, PoseSE2 goal_pos);
-    bool findGuiWayPath(vector<PoseSE2>& path);
-
-  private:
-    ros::NodeHandle nh_;
-    PlannerInterfacePtr planner_;
-    std::vector<ObstaclePtr> obst_vector_;
-    ViaPointContainer via_points_;
-    TebConfig config_;
-    boost::shared_ptr< dynamic_reconfigure::Server<TebLocalPlannerReconfigureConfig> > dynamic_recfg_; //!< Dynamic reconfigure server to allow config modifications at runtime
-    TebVisualizationPtr visual_;
-    RobotFootprintModelPtr robot_model_;
-    
-    PoseSE2 startpose_; //!< Store current robot pose
-    PoseSE2 endpose_; //!< Store current robot goal
-    geometry_msgs::Twist startvel_; //!< Store current robot translational and angular velocity (vx, vy, omega)
 };
 
 #endif // GUI_WAY_H

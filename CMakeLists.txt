@@ -133,6 +133,11 @@ include_directories(
   /usr/include/libalglib/
 )
 
+link_directories(
+ lib
+  ${catkin_LIB_DIRS}
+)
+
 ## Declare a C++ library
 #add_library(aic_extraction
 #
@@ -174,7 +179,6 @@ add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catk
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}_node
   ${catkin_LIBRARIES}
-  
 )
 
 add_executable(aic_auto_dock_testTool src/aic_auto_dock_testTool.cpp)
@@ -190,11 +194,12 @@ add_dependencies(aic_auto_dock_testTool ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ca
 
 add_executable(gui_way_teb src/gui_way_teb.cpp
                         src/math/recognizeUtility.cpp
-                        src/math/footprint.cpp)
+                        src/math/footprint.cpp
+                        src/aic_planner.cpp)
 #add_dependencies(gui_way2 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(gui_way_teb ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 #target_link_libraries(gui_way2 ${catkin_LIBRARIES})
-target_link_libraries(gui_way_teb ${catkin_LIBRARIES})
+target_link_libraries(gui_way_teb ${catkin_LIBRARIES} alglib)
 #############
 ## Install ##
 #############
