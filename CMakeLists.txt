@@ -130,6 +130,7 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
+  /usr/include/libalglib/
 )
 
 ## Declare a C++ library
@@ -173,6 +174,7 @@ add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catk
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}_node
   ${catkin_LIBRARIES}
+  
 )
 
 add_executable(aic_auto_dock_testTool src/aic_auto_dock_testTool.cpp)
