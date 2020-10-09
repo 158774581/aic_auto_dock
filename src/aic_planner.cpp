@@ -30,10 +30,9 @@ bool teb_planner::getVelocityCommand(double& vx, double& vy, double& omega, int 
   }
   if(planner_.get()->getVelocityCommand(vx, vy, omega,look_ahead_poses) ==true)
   {
-    double look_ahead_time = 0.3;
-    if(isTrajFeasible(vx, vy, omega,look_ahead_time) == true)
+    if(isTrajFeasible(vx, vy, omega) == true)
     {
-      return true;
+        return true;
     }
   }
   return false;
@@ -73,7 +72,7 @@ void teb_planner::clearObstacle()
   obst_vector_.clear();
 }
 
-bool teb_planner::isTrajFeasible(double vx, double vy, double omega, double look_ahead_time)
+bool teb_planner::isTrajFeasible(double vx, double vy, double omega)
 {
   PoseSE2 predict_pose(startpose_);
   std::vector<TrajectoryPointMsg> traj;
@@ -95,7 +94,7 @@ bool teb_planner::isTrajFeasible(double vx, double vy, double omega, double look
         double obs_dis = robot_model_->calculateDistance(predict_pose,pobst.get());
         if(obs_dis < config_.obstacles.min_obstacle_dist)
         {
-          ROS_INFO("robot is too close to obstacles,distance %f %f!!!",config_.obstacles.min_obstacle_dist,obs_dis);
+          ROS_INFO_ONCE("robot is too close to obstacles,distance %f %f!!!",config_.obstacles.min_obstacle_dist,obs_dis);
           return false;
         }
       }

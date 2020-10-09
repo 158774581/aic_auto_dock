@@ -24,6 +24,7 @@
 
 //reb 
 #include <teb_local_planner/teb_local_planner_ros.h>
+#include <teb_local_planner/teb_config.h>
 #include <interactive_markers/interactive_marker_server.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
@@ -41,12 +42,13 @@ class teb_planner
     bool getVelocityCommand(double& vx, double& vy, double& omega, int look_ahead_poses);
     bool setplan(PoseSE2& startpose,geometry_msgs::Twist& startVel,PoseSE2& endpose);
     PlannerInterfacePtr getplanner(){return planner_;};
+    TebConfig& getTebConfig() {return config_;};
     void CB_publishCycle(const ros::TimerEvent& e);
     void CB_publishCycle();
     void setLineObstacle(float x0,float y0,float x1,float y1);
     void setViaPoints(const nav_msgs::Path& via_points_msg);
     void clearObstacle();
-    bool isTrajFeasible(double vx, double vy, double omega, double look_ahead_time);
+    bool isTrajFeasible(double vx, double vy, double omega);
     bool isTrajFeasible(PoseSE2 robot_pos, PoseSE2 goal_pos);
     bool findGuiWayPath(vector<PoseSE2>& path);
 

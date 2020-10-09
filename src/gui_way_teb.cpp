@@ -12,30 +12,6 @@ gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
     : nh_(nh), local_nh_(local_nh), as_(new Server(local_nh, "gui_way", boost::bind(&gui_way::start, this, _1), false)),
     planner_(new teb_planner(local_nh)),simple_goal_client_(new Client_gui_way("aic_auto_dock_guiway/gui_way", true))
 {
-  //alglib_test test
-  real_2d_array xy = "[[0,0],[0.5,0],[1,0],[1.5,0],[1,-0.3]]";
-  double t = 0.25;
-  double x=0,y=0,dx=0,dy=0,ddx,ddy;
-  double v;
-  ae_int_t n = 5;
-  ae_int_t st = 0;
-  ae_int_t pt =0;
-  pspline2interpolant s;
-
-  pspline2build(xy, n, st,pt,s);
-  pspline2calc(s, t,x,y);
-  double arclength = pspline2arclength(s,0,1);
-  printf("t x y arclength %.4f %.4f %.4f %.4f\n",t, x,y,arclength); 
-  
-  double step = 0.01;
-  t = 0;
-  while(t<1)
-  {
-    pspline2calc(s, t,x,y);
-    printf("t x y %.4f %.4f %.4f\n",t,x,y); 
-    t = t+step;
-  }
-  // alglib_test end
   as_->start();
 
   setFootprint_sub_ = nh_.subscribe("/move_base/local_costmap/set_footprint", 10, &gui_way::setFootprintCallback, this);
@@ -146,7 +122,8 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
     vel_line_ = 0.1;
     vel_angle_ = 0.3;
   }
-
+  planner_->getTebConfig().robot.max_vel_x = vel_line_;
+  planner_->getTebConfig().robot.max_vel_theta = vel_angle_;
   /*** 避障区域 ***/
   points_polygon_.points.clear();
   points_straight_polygon_padding_.points.clear();
@@ -174,10 +151,6 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
   obstacle_dist_ = req->obstacle_dist;
   ROS_INFO("obstacle_dist_ %f back_dist_ %f", obstacle_dist_,back_dist_);
   preparePosition_ = req->preparePosition;
-  if (req->scale > 0 || req->scale < 0.1)
-    scale_ = req->scale;
-  else
-    scale_ = 0.1;
 
   /*** 全局环境变量 ***/
   actionlib_status_ = executing;
@@ -226,33 +199,48 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
       initial_pos.theta()  = 0;
       ROS_ERROR("can't find transform 'odom','base_link'");
     }
-
     tf::Transform odom_goal_frame(odom_port_frame_);
     q.setRPY(0,0,0);
-    tf::Transform goal_robot_frame;
     tf::Transform goal_nav_frame(q);
-    goal_robot_frame = odom_port_frame_.inverse()*odom_foot_frame;
-    double cfg_x = 1.5;
-    double parabola_b = cfg_x;
-    //y=a(x-b)^2
-    double parabola_a = goal_robot_frame.getOrigin().getY()/pow(goal_robot_frame.getOrigin().getX()-parabola_b,2);
+    target_foot_frame = (odom_foot_frame.inverse()*odom_port_frame_).inverse();
+    double cfg_y = 0.1;
+    double cfg_yaw = 0.1;
+    //get global path
+    int n = 5;
+    real_2d_array xy;
+    double x = target_foot_frame.getOrigin().getX();
+    double y = target_foot_frame.getOrigin().getY();
+    double aux_point[10] = {0,0,  0.5,0,  1,0,  preparePosition_,0,  x,y};
+    double goal_yaw = tf::getYaw(target_foot_frame.getRotation());
+    if (req->type == aic_auto_dock::gui_way2Goal::STRAIGHT)
+    {
+      goal_yaw = goal_yaw>0? goal_yaw-M_PI:goal_yaw+M_PI;
+    }
+    if (x > preparePosition_||fabs(y)>cfg_y||fabs(goal_yaw)>cfg_yaw)
+    {
+      double aux_point[] = {0,0,  0.3*preparePosition_,0,  0.6*preparePosition_,0,  \
+                            preparePosition_,0,  x,y};
+      xy.setcontent(n,2,aux_point);
+    }
+    else
+    {
+      double aux_point[] = {0,0,  x*0.3,0,  x*0.6,0,  x*0.8,0,  x,y};
+      xy.setcontent(n,2,aux_point);
+    }
+    pspline2interpolant spline;
+    pspline2build(xy, n, 0,0,spline);
+    // has get global path
     nav_msgs::Path path;
     geometry_msgs::PoseStamped via_p;
-    double cfg_dx = 0.1;
-    double cfg_path_length = 1.5;
+    double cfg_dt = 0.01;
+    double cfg_path_length = planner_->getTebConfig().trajectory.max_global_plan_lookahead_dist;
     double path_length = 0;
-    for (double x=goal_robot_frame.getOrigin().getX();x>0;x=x-cfg_dx)
+    for (double t=1;t>=0;t=t-cfg_dt)
     {
-      if(x < parabola_b)
-      {
-        goal_nav_frame.setOrigin(tf::Vector3(x,0.0,0.0));
-        path_length += cfg_dx;
-      }
-      else
-      {
-        goal_nav_frame.setOrigin(tf::Vector3(x,parabola_a*pow(x-parabola_b,2),0.0));
-        path_length += hypot(cfg_dx,2*parabola_a*(x-parabola_b)*cfg_dx);//dy = 2*a(x-b)*dt
-      }
+      pspline2calc(spline, t,x,y);
+      goal_nav_frame.setOrigin(tf::Vector3(x,y,0.0));
+      path_length = pspline2arclength(spline,t,1);
+
       odom_goal_frame  = odom_port_frame_*goal_nav_frame; 
       via_p.pose.position.x = odom_goal_frame.getOrigin().getX();
       via_p.pose.position.y = odom_goal_frame.getOrigin().getY();
@@ -261,9 +249,8 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
       {
         break;
       }
-    
-    planner_->setViaPoints(path);
     }
+    planner_->setViaPoints(path);
     goal_pos.x() = odom_goal_frame.getOrigin().getX();
     goal_pos.y() = odom_goal_frame.getOrigin().getY();
     goal_pos.theta() = tf::getYaw(odom_goal_frame.getRotation());
@@ -885,14 +872,14 @@ void gui_way::CB_simple_goal(const geometry_msgs::PoseStampedConstPtr& msg)
     // goal_msg.orientation.w = odom_goal_frame.getRotation().getW();
   //aic_auto_dock::gui_way2Goal::BACK;
   //aic_auto_dock::gui_way2Goal::STRAIGHT;
-  guiway_goal.type = aic_auto_dock::gui_way2Goal::STRAIGHT;
+  guiway_goal.type = aic_auto_dock::gui_way2Goal::BACK;
   guiway_goal.pose = goal_msg;
 
   guiway_goal.vel_line = 6;
   guiway_goal.vel_angle = 1;
   guiway_goal.back_dist = 0.1;//fabs(half_length_);
-  guiway_goal.obstacle_dist = 0.1;//fabs(half_length_);
-  //guiway_goal.preparePosition = 0.1;
+  guiway_goal.obstacle_dist = 10;//fabs(half_length_);
+  guiway_goal.preparePosition = 1.5;
   simple_goal_client_->waitForServer();
   ROS_INFO("wait server succeed");
 
