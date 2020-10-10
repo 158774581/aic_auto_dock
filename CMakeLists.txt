@@ -130,7 +130,6 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
-  /usr/include/libalglib/
 )
 
 link_directories(
@@ -269,4 +268,4 @@ install(DIRECTORY launch
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
-SET(CMAKE_BUILD_TYPE "RelWithDebInfo")
+#SET(CMAKE_BUILD_TYPE "RelWithDebInfo")

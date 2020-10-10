@@ -1,0 +1,49 @@
+<!-- 
+  Simulate a differential drive robot with the teb_local_planner in stage:
+  - stage
+  - map_server
+  - move_base
+  - static map
+  - amcl
+  - rviz view
+ -->
+<launch>
+
+        <!--  ************** Global Parameters ***************  -->
+        <param name="/use_sim_time" value="true"/>
+    <rosparam file="$(eval (env('HOME') + '/.aicconfig/autodock/guiway.yaml'))" command="load" />
+
+        <!--  ************** Stage Simulator ***************  -->
+	<node pkg="stage_ros" type="stageros" name="stageros" args="$(find teb_local_planner_tutorials)/stage/maze_diff_drive.world">
+		<remap from="base_scan" to="scan"/>
+  	</node>
+
+        <!--  ************** Navigation ***************  -->
+   	<node pkg="aic_auto_dock" type="gui_way_teb" name="aic_auto_dock_guiway" output="screen" >
+  	<!-- <node pkg="teb_local_planner" type="gui_way_teb" name="test_optim_node" output="screen" > -->
+		<rosparam file="$(find aic_auto_dock)/cfg/aic_teb_local_planner_params.yaml" command="load" />
+		<!-- <param name="odom_topic" value="odom"/>
+		<param name="footprint_model/type" value="circular"/>
+		<param name="footprint_model/radius" value="0.5"/> -->
+		<remap from="/dock_cmd_vel" to="cmd_vel"/>
+		<param name="map_frame" value="odom"/>
+	</node>
+
+
+	<!--  ****** Maps *****  -->
+	<node name="map_server" pkg="map_server" type="map_server" args="$(find teb_local_planner_tutorials)/maps/maze.yaml" output="screen">
+                <param name="frame_id" value="map"/>
+	</node>
+
+	<node pkg="amcl" type="amcl" name="amcl" output="screen">
+		<rosparam file="$(find teb_local_planner_tutorials)/cfg/amcl_params.yaml" command="load" />
+
+	        <param name="initial_pose_x"            value="2"/>
+		<param name="initial_pose_y"            value="2"/>
+		<param name="initial_pose_a"            value="0"/>
+	</node>
+
+	  <!--  **************** Visualisation ****************  -->
+	  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find teb_local_planner_tutorials)/cfg/rviz_navigation.rviz"/>
+
+</launch>

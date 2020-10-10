@@ -1,0 +1,43 @@
+string              tag_no
+int32               type
+geometry_msgs/Pose  pose
+float32             vel_line
+float32             vel_angle
+float32             back_dist
+float32             obstacle_dist
+float32             preparePosition
+float32             scale            #角速度响应比例，取值范围：0~0.1
+
+int32               BACK = 0
+int32               STRAIGHT = 1
+int32               PAUSE = 2
+int32               RESUM = 3
+int32               INITPORT = 4
+---
+uint64              err_msg          #状态码
+
+int32               result
+int32               CANCLE = 1
+int32               SUCCESS = 2
+int32               FAILED = 3
+int32               INITFAILED = 4
+
+float32             remaining_distance
+---
+uint64              err_msg          #状态码
+
+int32               status
+int32               EXECUTING = 1
+int32               PAUSE = 2
+
+int32               feedback
+int32               OBSTACLE_AVOIDING = 10
+int32               AVOID_SUCCESS = 11
+int32               ILLEGAL_GOAL = 12
+int32               STEP_PROCESS = 13
+
+float32             remaining_distance
+int32               step_process
+int32               PREPARE_NAV_STEP = 0
+int32               PREPARE_STEP = 1
+int32               PORT_STEP = 2

@@ -3,8 +3,8 @@
   date   :2020.9.18
 */
 #include <aic_auto_dock/gui_way_teb.h>
-#include "interpolation.h"
-#include "stdafx.h"
+#include <alglib/interpolation.h>
+#include <alglib/stdafx.h>
 using namespace alglib;
 //gui way 
 
@@ -46,8 +46,8 @@ gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
 
   try
   {
-    listerner_.waitForTransform("base_footprint", "base_laser_link", ros::Time(0), ros::Duration(10.0));
-    listerner_.lookupTransform("base_footprint", "base_laser_link", ros::Time(0), foot_laser_frame_);
+    listerner_.waitForTransform("base_footprint", "laser_link", ros::Time(0), ros::Duration(10.0));
+    listerner_.lookupTransform("base_footprint", "laser_link", ros::Time(0), foot_laser_frame_);
   }
   catch (tf::TransformException ex)
   {
@@ -197,7 +197,7 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
       initial_pos.x()  = 0;
       initial_pos.y()  = 0;
       initial_pos.theta()  = 0;
-      ROS_ERROR("can't find transform 'odom','base_link'");
+      ROS_ERROR("can't find transform 'odom','base_footprint'");
     }
     tf::Transform odom_goal_frame(odom_port_frame_);
     q.setRPY(0,0,0);
@@ -872,7 +872,7 @@ void gui_way::CB_simple_goal(const geometry_msgs::PoseStampedConstPtr& msg)
     // goal_msg.orientation.w = odom_goal_frame.getRotation().getW();
   //aic_auto_dock::gui_way2Goal::BACK;
   //aic_auto_dock::gui_way2Goal::STRAIGHT;
-  guiway_goal.type = aic_auto_dock::gui_way2Goal::BACK;
+  guiway_goal.type = aic_auto_dock::gui_way2Goal::STRAIGHT;
   guiway_goal.pose = goal_msg;
 
   guiway_goal.vel_line = 6;

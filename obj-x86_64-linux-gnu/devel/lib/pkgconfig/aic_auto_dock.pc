@@ -1,0 +1,8 @@
+prefix=/home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu/devel
+
+Name: aic_auto_dock
+Description: Description of aic_auto_dock
+Version: 0.0.7
+Cflags: -I/home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu/devel/include -I/home/aicrobo/catkin_ws/src/aic_auto_dock/include
+Libs: -L${prefix}/lib 
+Requires: roscpp rospy std_msgs aic_msgs tf actionlib actionlib_msgs message_runtime aic_laser_feature_line_extraction
