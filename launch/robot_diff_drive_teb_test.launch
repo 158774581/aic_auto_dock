@@ -27,6 +27,7 @@
 		<param name="footprint_model/radius" value="0.5"/> -->
 		<remap from="/dock_cmd_vel" to="cmd_vel"/>
 		<param name="map_frame" value="odom"/>
+		<param name="/laser_frame_name" value="base_laser_link" />
 	</node>
 
 

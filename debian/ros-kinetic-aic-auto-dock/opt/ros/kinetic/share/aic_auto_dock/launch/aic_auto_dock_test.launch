@@ -1,5 +1,0 @@
-<launch>
-    <!--include file="$(find aic_move_avoid)/launch/move_avoid.launch"/-->
-    <include file="$(find aic_auto_dock)/launch/aic_auto_dock.launch"/>
-    <include file="$(find aic_auto_dock)/launch/aic_auto_dock_testTool.launch"/>
-</launch>

@@ -12,6 +12,24 @@ gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
     : nh_(nh), local_nh_(local_nh), as_(new Server(local_nh, "gui_way", boost::bind(&gui_way::start, this, _1), false)),
     planner_(new teb_planner(local_nh)),simple_goal_client_(new Client_gui_way("aic_auto_dock_guiway/gui_way", true))
 {
+    /***
+   * init launch param
+   ***/
+  local_nh_.param< double >("yawThrehold", yawThrehold_, 0.02);
+  local_nh_.param< double >("delta_detector_spacing", delta_detector_spacing_, 0.001);
+  local_nh_.param< double >("dangerRange_x", dangerRange_x_, 0.05);
+  local_nh_.param< double >("dangerRange_y", dangerRange_y_, 0.02);
+  local_nh_.param< double >("radiusThrehold", radiusThrehold_, 0.1);
+  local_nh_.param< double >("detectorYCoordinate", detector_y_coordinate_, 0.1);
+  local_nh_.param< double >("aW_acc", aW_acc_, 0.15);
+  local_nh_.param< double >("aW_dcc", aW_dcc_, 0.15);
+  local_nh_.param< double >("prepare_lineVel", prepare_lineVel_, 0.1);
+  local_nh_.param< double >("prepare_angleVel", prepare_angleVel_, 0.3);
+  local_nh_.param< double >("prepare_scale", prepare_scale_, 0.05);
+  local_nh_.param< double >("angleVel_turn", angleVel_turn_, 0.3);
+  local_nh_.param< std::string >("laser_frame_name", laser_frame_name_, "laser_link");
+  loadParamFromYaml();
+
   as_->start();
 
   setFootprint_sub_ = nh_.subscribe("/move_base/local_costmap/set_footprint", 10, &gui_way::setFootprintCallback, this);
@@ -25,9 +43,16 @@ gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
 
   vector< geometry_msgs::Point > points = makeFootprintFromParams(nh);
   points_ = points;
+  //debug
+  geometry_msgs::Point debug_p;
+  debug_p.x = 0.5;debug_p.x = 0.25;  points_.push_back(debug_p);
+  debug_p.x = -0.5;debug_p.x = 0.25;  points_.push_back(debug_p);
+  debug_p.x = -0.5;debug_p.x = -0.25;  points_.push_back(debug_p);
+  debug_p.x = 0.5;debug_p.x = -0.25;  points_.push_back(debug_p);
+  //end debug
 
   //teb
-  simple_goal_sub_ = nh.subscribe("/move_base_simple/goal", 1, &gui_way::CB_simple_goal,this);
+  simple_goal_sub_ = nh.subscribe("/move_base_simple/goal1", 1, &gui_way::CB_simple_goal,this);
   //ros::Timer publish_timer = nh.createTimer(ros::Duration(0.1), \
   //                           boost::bind(&teb_planner::CB_publishCycle,planner_,_1));
   
@@ -46,32 +71,14 @@ gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
 
   try
   {
-    listerner_.waitForTransform("base_footprint", "laser_link", ros::Time(0), ros::Duration(10.0));
-    listerner_.lookupTransform("base_footprint", "laser_link", ros::Time(0), foot_laser_frame_);
+    listerner_.waitForTransform("base_footprint", laser_frame_name_, ros::Time(0), ros::Duration(10.0));
+    listerner_.lookupTransform("base_footprint", laser_frame_name_, ros::Time(0), foot_laser_frame_);
   }
   catch (tf::TransformException ex)
   {
     ROS_ERROR("%s", ex.what());
     return;
   }
-
-  /***
-   * init launch param
-   ***/
-  local_nh_.param< double >("yawThrehold", yawThrehold_, 0.02);
-  local_nh_.param< double >("delta_detector_spacing", delta_detector_spacing_, 0.001);
-  local_nh_.param< double >("dangerRange_x", dangerRange_x_, 0.05);
-  local_nh_.param< double >("dangerRange_y", dangerRange_y_, 0.02);
-  local_nh_.param< double >("radiusThrehold", radiusThrehold_, 0.1);
-  local_nh_.param< double >("detectorYCoordinate", detector_y_coordinate_, 0.1);
-  local_nh_.param< double >("aW_acc", aW_acc_, 0.15);
-  local_nh_.param< double >("aW_dcc", aW_dcc_, 0.15);
-  local_nh_.param< double >("prepare_lineVel", prepare_lineVel_, 0.1);
-  local_nh_.param< double >("prepare_angleVel", prepare_angleVel_, 0.3);
-  local_nh_.param< double >("prepare_scale", prepare_scale_, 0.05);
-  local_nh_.param< double >("angleVel_turn", angleVel_turn_, 0.3);
-
-  loadParamFromYaml();
 }
 
 void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
@@ -176,6 +183,7 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
       laser_sub_.shutdown();
       return;
     }
+    Laserhander(scan_msg_);
 
     planner_->CB_publishCycle();
     double dt = ros::Time::now().toSec() - begin_time;
@@ -267,6 +275,9 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
       //plan failed ,set vel = 0
       twist.linear.x  = 0;
       twist.angular.z = 0;
+      motion_status_ = failed;
+      ROS_INFO("Unable to plan a valid path !!!");
+      break;
     }
  
     //end(teb planner)
@@ -447,11 +458,43 @@ void gui_way::setFootprintCallback(const geometry_msgs::Polygon& msg)
   half_width_ = half_width;
   accept_robotInfo_ = true;
 }
-
 void gui_way::LaserCallback(const sensor_msgs::LaserScan& msg)
 {
+  scan_msg_ = msg;
+  accept_laserScan = true;
+}
+void gui_way::Laserhander(const sensor_msgs::LaserScan& msg)
+{
+  tf::Quaternion q;
   if (accept_robotInfo_)
   {
+    //U型的车库障碍物
+    double cfg_x = 1;
+    double cfg_y = 0.5;
+    //add obstacles
+    planner_->clearObstacle();
+    q.setRPY(0,0,0);
+    tf::Transform goal_obs_frame(q,tf::Vector3(cfg_x,-cfg_y,0));
+    tf::Transform goal_obs1_frame(q,tf::Vector3(-cfg_x,-cfg_y,0));
+    tf::Transform odom_obs_frame = odom_port_frame_*goal_obs_frame;
+    tf::Transform odom_obs1_frame = odom_port_frame_*goal_obs1_frame;
+    planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
+                              odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
+
+    goal_obs_frame.setOrigin(tf::Vector3(-cfg_x,-cfg_y,0));
+    goal_obs1_frame.setOrigin(tf::Vector3(-cfg_x,cfg_y,0));
+    odom_obs_frame = odom_port_frame_*goal_obs_frame;
+    odom_obs1_frame = odom_port_frame_*goal_obs1_frame;
+    planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
+                              odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
+
+    goal_obs_frame.setOrigin(tf::Vector3(-cfg_x,cfg_y,0));
+    goal_obs1_frame.setOrigin(tf::Vector3(cfg_x,cfg_y,0));
+    odom_obs_frame = odom_port_frame_*goal_obs_frame;
+    odom_obs1_frame = odom_port_frame_*goal_obs1_frame;
+    planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
+                              odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
+
     //避障模块
     for (int i = 0; i < msg.ranges.size(); i++)
     {
@@ -462,10 +505,16 @@ void gui_way::LaserCallback(const sensor_msgs::LaserScan& msg)
       double x = dist_laser * cos(angle_laser);
       double y = dist_laser * sin(angle_laser);
 
-      tf::Quaternion q;
       q.setRPY(0, 0, 0);
       tf::Transform laser_pt_frame(q, tf::Vector3(x, y, 0));
       tf::Transform foot_pt_frame = foot_laser_frame_ * laser_pt_frame;
+      tf::Transform odom_pt_frame = realTime_odom_*foot_pt_frame;
+      //将距离小于1.5m的障碍物添加到TEB规划避障中
+      double cfg_dis = 1;
+      if (hypot(foot_pt_frame.getOrigin().getX(),foot_pt_frame.getOrigin().getY())<cfg_dis)
+      {
+         planner_->setPointObstacle(odom_pt_frame.getOrigin().getX(),odom_pt_frame.getOrigin().getY());
+      }
 
       if (avoidType_ == AvoidType::ROUND)
       {
@@ -477,7 +526,7 @@ void gui_way::LaserCallback(const sensor_msgs::LaserScan& msg)
         if (dist_laser > msg.range_min && dist_laser < msg.range_max && !boolcarBody && boolcarBodyPadding)
         {
           danger_mark_ = true;
-          accept_laserScan = true;
+          // accept_laserScan = true;
 
           return;
         }
@@ -492,7 +541,7 @@ void gui_way::LaserCallback(const sensor_msgs::LaserScan& msg)
         if (dist_laser > msg.range_min && dist_laser < msg.range_max && !boolcarBody && boolcarBodyPadding)
         {
           danger_mark_ = true;
-          accept_laserScan = true;
+          // accept_laserScan = true;
 
           return;
         }
@@ -500,7 +549,7 @@ void gui_way::LaserCallback(const sensor_msgs::LaserScan& msg)
     }
 
     danger_mark_ = false;
-    accept_laserScan = true;
+    // accept_laserScan = true;
   }
   else
     ROS_INFO("move avoid node cannot get the robot information, temporarily shut down obstacle avoidance function!");
@@ -878,36 +927,38 @@ void gui_way::CB_simple_goal(const geometry_msgs::PoseStampedConstPtr& msg)
   guiway_goal.vel_line = 6;
   guiway_goal.vel_angle = 1;
   guiway_goal.back_dist = 0.1;//fabs(half_length_);
-  guiway_goal.obstacle_dist = 10;//fabs(half_length_);
+  guiway_goal.obstacle_dist = 0.5;//fabs(half_length_);
   guiway_goal.preparePosition = 1.5;
   simple_goal_client_->waitForServer();
   ROS_INFO("wait server succeed");
 
-  double cfg_x = 1;
-  double cfg_y = 0.5;
-  //add obstacles
-  planner_->clearObstacle();
-  q.setRPY(0,0,0);
-  tf::Transform goal_obs_frame(q,tf::Vector3(cfg_x,-cfg_y,0));
-  tf::Transform goal_obs1_frame(q,tf::Vector3(-cfg_x,-cfg_y,0));
-  tf::Transform odom_obs_frame = odom_goal_frame*goal_obs_frame;
-  tf::Transform odom_obs1_frame = odom_goal_frame*goal_obs1_frame;
-  planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
-                            odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
+  // //U型的车库障碍物
+  // double cfg_x = 1;
+  // double cfg_y = 0.5;
+  // //add obstacles
+  // planner_->clearObstacle();
+  // q.setRPY(0,0,0);
+  // tf::Transform goal_obs_frame(q,tf::Vector3(cfg_x,-cfg_y,0));
+  // tf::Transform goal_obs1_frame(q,tf::Vector3(-cfg_x,-cfg_y,0));
+  // tf::Transform odom_obs_frame = odom_goal_frame*goal_obs_frame;
+  // tf::Transform odom_obs1_frame = odom_goal_frame*goal_obs1_frame;
+  // planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
+  //                           odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
 
-  goal_obs_frame.setOrigin(tf::Vector3(-cfg_x,-cfg_y,0));
-  goal_obs1_frame.setOrigin(tf::Vector3(-cfg_x,cfg_y,0));
-  odom_obs_frame = odom_goal_frame*goal_obs_frame;
-  odom_obs1_frame = odom_goal_frame*goal_obs1_frame;
-  planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
-                            odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
+  // goal_obs_frame.setOrigin(tf::Vector3(-cfg_x,-cfg_y,0));
+  // goal_obs1_frame.setOrigin(tf::Vector3(-cfg_x,cfg_y,0));
+  // odom_obs_frame = odom_goal_frame*goal_obs_frame;
+  // odom_obs1_frame = odom_goal_frame*goal_obs1_frame;
+  // planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
+  //                           odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
 
-  goal_obs_frame.setOrigin(tf::Vector3(-cfg_x,cfg_y,0));
-  goal_obs1_frame.setOrigin(tf::Vector3(cfg_x,cfg_y,0));
-  odom_obs_frame = odom_goal_frame*goal_obs_frame;
-  odom_obs1_frame = odom_goal_frame*goal_obs1_frame;
-  planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
-                            odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
+  // goal_obs_frame.setOrigin(tf::Vector3(-cfg_x,cfg_y,0));
+  // goal_obs1_frame.setOrigin(tf::Vector3(cfg_x,cfg_y,0));
+  // odom_obs_frame = odom_goal_frame*goal_obs_frame;
+  // odom_obs1_frame = odom_goal_frame*goal_obs1_frame;
+  // planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
+  //                           odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
+
 
   simple_goal_client_->sendGoal(guiway_goal);
 }

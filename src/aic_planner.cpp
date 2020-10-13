@@ -34,7 +34,7 @@ bool teb_planner::getVelocityCommand(double& vx, double& vy, double& omega, int 
   }
   if(planner_.get()->getVelocityCommand(vx, vy, omega,look_ahead_poses) ==true)
   {
-    if(isTrajFeasible(vx, vy, omega) == true)
+    if(isTrajFeasible() == true)
     {
         return true;
     }
@@ -71,12 +71,18 @@ void teb_planner::setLineObstacle(float x0,float y0,float x1,float y1)
 }
 
 // set obstacle
+void teb_planner::setPointObstacle(float x0,float y0)
+{
+  obst_vector_.push_back( boost::make_shared<PointObstacle>(x0, y0));
+}
+
+// set obstacle
 void teb_planner::clearObstacle()
 {
   obst_vector_.clear();
 }
 
-bool teb_planner::isTrajFeasible(double vx, double vy, double omega)
+bool teb_planner::isTrajFeasible()
 {
   PoseSE2 predict_pose(startpose_);
   std::vector<TrajectoryPointMsg> traj;
@@ -89,13 +95,9 @@ bool teb_planner::isTrajFeasible(double vx, double vy, double omega)
       predict_pose.x()    = pose.pose.position.x;
       predict_pose.y()    = pose.pose.position.y;
       predict_pose.theta()    = tf::getYaw(pose.pose.orientation);
-      for (ObstContainer::const_iterator obst = obst_vector_.begin(); obst != obst_vector_.end(); ++obst)
-      {
-        boost::shared_ptr<LineObstacle> pobst = boost::dynamic_pointer_cast<LineObstacle>(*obst);   
-        if (!pobst)
-          continue;
-          
-        double obs_dis = robot_model_->calculateDistance(predict_pose,pobst.get());
+      for (const ObstaclePtr& obst : obst_vector_)
+      {        
+        double obs_dis = robot_model_->calculateDistance(predict_pose,obst.get());
         if(obs_dis < config_.obstacles.min_obstacle_dist)
         {
           ROS_INFO_ONCE("robot is too close to obstacles,distance %f %f!!!",config_.obstacles.min_obstacle_dist,obs_dis);
@@ -112,24 +114,24 @@ bool teb_planner::isTrajFeasible(double vx, double vy, double omega)
   return true;
 }
 
-bool teb_planner::isTrajFeasible(PoseSE2 robot_pos, PoseSE2 goal_pos)
-{
-    for (ObstContainer::const_iterator obst = obst_vector_.begin(); obst != obst_vector_.end(); ++obst)
-    {
-      boost::shared_ptr<LineObstacle> pobst = boost::dynamic_pointer_cast<LineObstacle>(*obst);   
-      if (!pobst)
-        continue;
-      double obs_dis = pobst->getMinimumDistance(robot_pos.position(),goal_pos.position());
-      //double obs_dis = robot_model_->calculateDistance(predict_pose,pobst.get());
-      if(obs_dis < 0.1)
-      {
-        return false;
-      }
-    }
-  // }
+// bool teb_planner::isTrajFeasible(PoseSE2 robot_pos, PoseSE2 goal_pos)
+// {
+//     for (ObstContainer::const_iterator obst = obst_vector_.begin(); obst != obst_vector_.end(); ++obst)
+//     {
+//       boost::shared_ptr<LineObstacle> pobst = boost::dynamic_pointer_cast<LineObstacle>(*obst);   
+//       if (!pobst)
+//         continue;
+//       double obs_dis = pobst->getMinimumDistance(robot_pos.position(),goal_pos.position());
+//       //double obs_dis = robot_model_->calculateDistance(predict_pose,pobst.get());
+//       if(obs_dis < 0.1)
+//       {
+//         return false;
+//       }
+//     }
+//   // }
 
-  return true;
-}
+//   return true;
+// }
 
 void teb_planner::setViaPoints(const nav_msgs::Path& via_points_msg)
 {

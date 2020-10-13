@@ -8,5 +8,8 @@
 
 # modified environment variables
 export CMAKE_PREFIX_PATH="/home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu/devel:$CMAKE_PREFIX_PATH"
+export LD_LIBRARY_PATH="/home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu/devel/lib:$LD_LIBRARY_PATH"
+export PKG_CONFIG_PATH="/home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu/devel/lib/pkgconfig:$PKG_CONFIG_PATH"
 export PWD="/home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu"
+export PYTHONPATH="/home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu/devel/lib/python2.7/dist-packages:$PYTHONPATH"
 export ROS_PACKAGE_PATH="/home/aicrobo/catkin_ws/src/aic_auto_dock:$ROS_PACKAGE_PATH"

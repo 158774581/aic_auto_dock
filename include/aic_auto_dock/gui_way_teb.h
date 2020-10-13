@@ -67,6 +67,7 @@ private:
   void odomCallback(const nav_msgs::OdometryConstPtr&);
   void setFootprintCallback(const geometry_msgs::Polygon& msg);
   void LaserCallback(const sensor_msgs::LaserScan& msg);
+  void Laserhander(const sensor_msgs::LaserScan& msg);
   void CB_simple_goal(const geometry_msgs::PoseStampedConstPtr& msg);
 
   bool goalAccept();
@@ -116,6 +117,7 @@ private:
   double dangerRange_xMax_, dangerRange_xMin_, dangerRange_yMax_, dangerRange_yMin_;
   bool danger_mark_ = false;
   tf::StampedTransform foot_laser_frame_;
+  std::string laser_frame_name_;
   double half_length_ = 0.0, half_width_ = 0.0;
   bool accept_robotInfo_ = false, accept_laserScan = false;
   AvoidType::Avoid_type avoidType_; // 0:circle  1:square
@@ -133,6 +135,8 @@ private:
 
   teb_planner* planner_;
   Client_gui_way* simple_goal_client_;
+
+  sensor_msgs::LaserScan scan_msg_;
 };
 
 #endif // GUI_WAY_H

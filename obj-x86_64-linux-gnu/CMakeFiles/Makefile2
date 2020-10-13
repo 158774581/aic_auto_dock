@@ -81,20 +81,15 @@ CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/pcl_msgs_generate_messages
 CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/pcl_msgs_generate_messages_eus.dir/all
 CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/std_srvs_generate_messages_cpp.dir/all
 CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/pcl_msgs_generate_messages_cpp.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/roscpp_generate_messages_cpp.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/roscpp_generate_messages_eus.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/costmap_converter_generate_messages_py.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/geometry_msgs_generate_messages_py.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/geometry_msgs_generate_messages_lisp.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/std_msgs_generate_messages_lisp.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/actionlib_msgs_generate_messages_eus.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/actionlib_generate_messages_lisp.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/aic_auto_dock_generate_messages_eus.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/actionlib_msgs_generate_messages_cpp.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/sensor_msgs_generate_messages_eus.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/actionlib_generate_messages_nodejs.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/rosgraph_msgs_generate_messages_cpp.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/visualization_msgs_generate_messages_cpp.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/nodelet_topic_tools_gencfg.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/bond_generate_messages_py.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/bond_generate_messages_lisp.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/bond_generate_messages_eus.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/nodelet_generate_messages_py.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/nodelet_generate_messages_nodejs.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/nodelet_generate_messages_lisp.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/topic_tools_generate_messages_cpp.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/nodelet_generate_messages_eus.dir/all
 CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/teb_local_planner_generate_messages_nodejs.dir/all
 CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/rosgraph_msgs_generate_messages_nodejs.dir/all
 CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/bond_generate_messages_cpp.dir/all
@@ -153,15 +148,12 @@ CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/base_local_planner_generat
 CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/base_local_planner_gencfg.dir/all
 CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/topic_tools_generate_messages_nodejs.dir/all
 CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/sensor_msgs_generate_messages_lisp.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/nodelet_topic_tools_gencfg.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/bond_generate_messages_py.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/bond_generate_messages_lisp.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/bond_generate_messages_eus.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/nodelet_generate_messages_py.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/nodelet_generate_messages_nodejs.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/nodelet_generate_messages_lisp.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/topic_tools_generate_messages_cpp.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/nodelet_generate_messages_eus.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/costmap_2d_generate_messages_cpp.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/dynamic_reconfigure_gencfg.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/costmap_2d_generate_messages_py.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/rosgraph_msgs_generate_messages_py.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/actionlib_generate_messages_cpp.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/costmap_2d_generate_messages_eus.dir/all
 CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/map_msgs_generate_messages_py.dir/all
 CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/map_msgs_generate_messages_nodejs.dir/all
 CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/map_msgs_generate_messages_lisp.dir/all
@@ -192,12 +184,20 @@ CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/actionlib_msgs_generate_me
 CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/pcl_msgs_generate_messages_nodejs.dir/all
 CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/teb_local_planner_generate_messages_lisp.dir/all
 CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/aic_auto_dock_generate_messages_lisp.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/costmap_2d_generate_messages_cpp.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/dynamic_reconfigure_gencfg.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/costmap_2d_generate_messages_py.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/rosgraph_msgs_generate_messages_py.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/actionlib_generate_messages_cpp.dir/all
-CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/costmap_2d_generate_messages_eus.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/roscpp_generate_messages_cpp.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/roscpp_generate_messages_eus.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/costmap_converter_generate_messages_py.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/geometry_msgs_generate_messages_py.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/geometry_msgs_generate_messages_lisp.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/std_msgs_generate_messages_lisp.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/actionlib_msgs_generate_messages_eus.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/actionlib_generate_messages_lisp.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/aic_auto_dock_generate_messages_eus.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/actionlib_msgs_generate_messages_cpp.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/sensor_msgs_generate_messages_eus.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/actionlib_generate_messages_nodejs.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/rosgraph_msgs_generate_messages_cpp.dir/all
+CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/visualization_msgs_generate_messages_cpp.dir/all
 CMakeFiles/aic_auto_dock_testTool.dir/all: CMakeFiles/costmap_2d_generate_messages_nodejs.dir/all
 	$(MAKE) -f CMakeFiles/aic_auto_dock_testTool.dir/build.make CMakeFiles/aic_auto_dock_testTool.dir/depend
 	$(MAKE) -f CMakeFiles/aic_auto_dock_testTool.dir/build.make CMakeFiles/aic_auto_dock_testTool.dir/build
@@ -949,10 +949,10 @@ clean: CMakeFiles/bond_generate_messages_py.dir/clean
 
 # All Build rule for target.
 CMakeFiles/aic_auto_dock_generate_messages.dir/all: CMakeFiles/aic_auto_dock_generate_messages_nodejs.dir/all
-CMakeFiles/aic_auto_dock_generate_messages.dir/all: CMakeFiles/aic_auto_dock_generate_messages_eus.dir/all
 CMakeFiles/aic_auto_dock_generate_messages.dir/all: CMakeFiles/aic_auto_dock_generate_messages_py.dir/all
 CMakeFiles/aic_auto_dock_generate_messages.dir/all: CMakeFiles/aic_auto_dock_generate_messages_cpp.dir/all
 CMakeFiles/aic_auto_dock_generate_messages.dir/all: CMakeFiles/aic_auto_dock_generate_messages_lisp.dir/all
+CMakeFiles/aic_auto_dock_generate_messages.dir/all: CMakeFiles/aic_auto_dock_generate_messages_eus.dir/all
 	$(MAKE) -f CMakeFiles/aic_auto_dock_generate_messages.dir/build.make CMakeFiles/aic_auto_dock_generate_messages.dir/depend
 	$(MAKE) -f CMakeFiles/aic_auto_dock_generate_messages.dir/build.make CMakeFiles/aic_auto_dock_generate_messages.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu/CMakeFiles --progress-num= "Built target aic_auto_dock_generate_messages"
@@ -1740,20 +1740,15 @@ CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/pcl_msgs_generate_messages_lis
 CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/pcl_msgs_generate_messages_eus.dir/all
 CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/std_srvs_generate_messages_cpp.dir/all
 CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/pcl_msgs_generate_messages_cpp.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/roscpp_generate_messages_cpp.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/roscpp_generate_messages_eus.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/costmap_converter_generate_messages_py.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/geometry_msgs_generate_messages_py.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/geometry_msgs_generate_messages_lisp.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/std_msgs_generate_messages_lisp.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/actionlib_msgs_generate_messages_eus.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/actionlib_generate_messages_lisp.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/aic_auto_dock_generate_messages_eus.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/actionlib_msgs_generate_messages_cpp.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/sensor_msgs_generate_messages_eus.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/actionlib_generate_messages_nodejs.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/rosgraph_msgs_generate_messages_cpp.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/visualization_msgs_generate_messages_cpp.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/nodelet_topic_tools_gencfg.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/bond_generate_messages_py.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/bond_generate_messages_lisp.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/bond_generate_messages_eus.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/nodelet_generate_messages_py.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/nodelet_generate_messages_nodejs.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/nodelet_generate_messages_lisp.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/topic_tools_generate_messages_cpp.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/nodelet_generate_messages_eus.dir/all
 CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/teb_local_planner_generate_messages_nodejs.dir/all
 CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/rosgraph_msgs_generate_messages_nodejs.dir/all
 CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/bond_generate_messages_cpp.dir/all
@@ -1812,15 +1807,12 @@ CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/base_local_planner_generate_me
 CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/base_local_planner_gencfg.dir/all
 CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/topic_tools_generate_messages_nodejs.dir/all
 CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/sensor_msgs_generate_messages_lisp.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/nodelet_topic_tools_gencfg.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/bond_generate_messages_py.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/bond_generate_messages_lisp.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/bond_generate_messages_eus.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/nodelet_generate_messages_py.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/nodelet_generate_messages_nodejs.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/nodelet_generate_messages_lisp.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/topic_tools_generate_messages_cpp.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/nodelet_generate_messages_eus.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/costmap_2d_generate_messages_cpp.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/dynamic_reconfigure_gencfg.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/costmap_2d_generate_messages_py.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/rosgraph_msgs_generate_messages_py.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/actionlib_generate_messages_cpp.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/costmap_2d_generate_messages_eus.dir/all
 CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/map_msgs_generate_messages_py.dir/all
 CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/map_msgs_generate_messages_nodejs.dir/all
 CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/map_msgs_generate_messages_lisp.dir/all
@@ -1851,12 +1843,20 @@ CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/actionlib_msgs_generate_messag
 CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/pcl_msgs_generate_messages_nodejs.dir/all
 CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/teb_local_planner_generate_messages_lisp.dir/all
 CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/aic_auto_dock_generate_messages_lisp.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/costmap_2d_generate_messages_cpp.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/dynamic_reconfigure_gencfg.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/costmap_2d_generate_messages_py.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/rosgraph_msgs_generate_messages_py.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/actionlib_generate_messages_cpp.dir/all
-CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/costmap_2d_generate_messages_eus.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/roscpp_generate_messages_cpp.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/roscpp_generate_messages_eus.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/costmap_converter_generate_messages_py.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/geometry_msgs_generate_messages_py.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/geometry_msgs_generate_messages_lisp.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/std_msgs_generate_messages_lisp.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/actionlib_msgs_generate_messages_eus.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/actionlib_generate_messages_lisp.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/aic_auto_dock_generate_messages_eus.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/actionlib_msgs_generate_messages_cpp.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/sensor_msgs_generate_messages_eus.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/actionlib_generate_messages_nodejs.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/rosgraph_msgs_generate_messages_cpp.dir/all
+CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/visualization_msgs_generate_messages_cpp.dir/all
 CMakeFiles/aic_auto_dock_node.dir/all: CMakeFiles/costmap_2d_generate_messages_nodejs.dir/all
 	$(MAKE) -f CMakeFiles/aic_auto_dock_node.dir/build.make CMakeFiles/aic_auto_dock_node.dir/depend
 	$(MAKE) -f CMakeFiles/aic_auto_dock_node.dir/build.make CMakeFiles/aic_auto_dock_node.dir/build
@@ -2474,12 +2474,12 @@ CMakeFiles/aic_auto_dock_generate_messages_lisp.dir/all: CMakeFiles/_aic_auto_do
 CMakeFiles/aic_auto_dock_generate_messages_lisp.dir/all: CMakeFiles/_aic_auto_dock_generate_messages_check_deps_gui_way2Action.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_lisp.dir/all: CMakeFiles/_aic_auto_dock_generate_messages_check_deps_gui_way2Result.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_lisp.dir/all: CMakeFiles/_aic_auto_dock_generate_messages_check_deps_gui_way2ActionGoal.dir/all
-CMakeFiles/aic_auto_dock_generate_messages_lisp.dir/all: CMakeFiles/geometry_msgs_generate_messages_lisp.dir/all
-CMakeFiles/aic_auto_dock_generate_messages_lisp.dir/all: CMakeFiles/std_msgs_generate_messages_lisp.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_lisp.dir/all: CMakeFiles/_aic_auto_dock_generate_messages_check_deps_gui_way2ActionResult.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_lisp.dir/all: CMakeFiles/_aic_auto_dock_generate_messages_check_deps_gui_way2Goal.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_lisp.dir/all: CMakeFiles/actionlib_msgs_generate_messages_lisp.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_lisp.dir/all: CMakeFiles/_aic_auto_dock_generate_messages_check_deps_gui_way2ActionFeedback.dir/all
+CMakeFiles/aic_auto_dock_generate_messages_lisp.dir/all: CMakeFiles/geometry_msgs_generate_messages_lisp.dir/all
+CMakeFiles/aic_auto_dock_generate_messages_lisp.dir/all: CMakeFiles/std_msgs_generate_messages_lisp.dir/all
 	$(MAKE) -f CMakeFiles/aic_auto_dock_generate_messages_lisp.dir/build.make CMakeFiles/aic_auto_dock_generate_messages_lisp.dir/depend
 	$(MAKE) -f CMakeFiles/aic_auto_dock_generate_messages_lisp.dir/build.make CMakeFiles/aic_auto_dock_generate_messages_lisp.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu/CMakeFiles --progress-num=16,17,18,19,20,21,22 "Built target aic_auto_dock_generate_messages_lisp"
@@ -2867,12 +2867,12 @@ CMakeFiles/aic_auto_dock_generate_messages_eus.dir/all: CMakeFiles/_aic_auto_doc
 CMakeFiles/aic_auto_dock_generate_messages_eus.dir/all: CMakeFiles/_aic_auto_dock_generate_messages_check_deps_gui_way2Action.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_eus.dir/all: CMakeFiles/_aic_auto_dock_generate_messages_check_deps_gui_way2Result.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_eus.dir/all: CMakeFiles/_aic_auto_dock_generate_messages_check_deps_gui_way2ActionGoal.dir/all
-CMakeFiles/aic_auto_dock_generate_messages_eus.dir/all: CMakeFiles/actionlib_msgs_generate_messages_eus.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_eus.dir/all: CMakeFiles/_aic_auto_dock_generate_messages_check_deps_gui_way2ActionResult.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_eus.dir/all: CMakeFiles/std_msgs_generate_messages_eus.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_eus.dir/all: CMakeFiles/_aic_auto_dock_generate_messages_check_deps_gui_way2Goal.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_eus.dir/all: CMakeFiles/_aic_auto_dock_generate_messages_check_deps_gui_way2ActionFeedback.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_eus.dir/all: CMakeFiles/geometry_msgs_generate_messages_eus.dir/all
+CMakeFiles/aic_auto_dock_generate_messages_eus.dir/all: CMakeFiles/actionlib_msgs_generate_messages_eus.dir/all
 	$(MAKE) -f CMakeFiles/aic_auto_dock_generate_messages_eus.dir/build.make CMakeFiles/aic_auto_dock_generate_messages_eus.dir/depend
 	$(MAKE) -f CMakeFiles/aic_auto_dock_generate_messages_eus.dir/build.make CMakeFiles/aic_auto_dock_generate_messages_eus.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu/CMakeFiles --progress-num=8,9,10,11,12,13,14,15 "Built target aic_auto_dock_generate_messages_eus"
@@ -3324,12 +3324,12 @@ CMakeFiles/aic_auto_dock_generate_messages_py.dir/all: CMakeFiles/_aic_auto_dock
 CMakeFiles/aic_auto_dock_generate_messages_py.dir/all: CMakeFiles/_aic_auto_dock_generate_messages_check_deps_gui_way2Action.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_py.dir/all: CMakeFiles/_aic_auto_dock_generate_messages_check_deps_gui_way2Result.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_py.dir/all: CMakeFiles/_aic_auto_dock_generate_messages_check_deps_gui_way2ActionGoal.dir/all
-CMakeFiles/aic_auto_dock_generate_messages_py.dir/all: CMakeFiles/geometry_msgs_generate_messages_py.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_py.dir/all: CMakeFiles/_aic_auto_dock_generate_messages_check_deps_gui_way2ActionResult.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_py.dir/all: CMakeFiles/_aic_auto_dock_generate_messages_check_deps_gui_way2Goal.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_py.dir/all: CMakeFiles/std_msgs_generate_messages_py.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_py.dir/all: CMakeFiles/_aic_auto_dock_generate_messages_check_deps_gui_way2ActionFeedback.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_py.dir/all: CMakeFiles/actionlib_msgs_generate_messages_py.dir/all
+CMakeFiles/aic_auto_dock_generate_messages_py.dir/all: CMakeFiles/geometry_msgs_generate_messages_py.dir/all
 	$(MAKE) -f CMakeFiles/aic_auto_dock_generate_messages_py.dir/build.make CMakeFiles/aic_auto_dock_generate_messages_py.dir/depend
 	$(MAKE) -f CMakeFiles/aic_auto_dock_generate_messages_py.dir/build.make CMakeFiles/aic_auto_dock_generate_messages_py.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu/CMakeFiles --progress-num=30,31,32,33,34,35,36,37 "Built target aic_auto_dock_generate_messages_py"
@@ -4240,20 +4240,15 @@ CMakeFiles/gui_way_teb.dir/all: CMakeFiles/pcl_msgs_generate_messages_lisp.dir/a
 CMakeFiles/gui_way_teb.dir/all: CMakeFiles/pcl_msgs_generate_messages_eus.dir/all
 CMakeFiles/gui_way_teb.dir/all: CMakeFiles/std_srvs_generate_messages_cpp.dir/all
 CMakeFiles/gui_way_teb.dir/all: CMakeFiles/pcl_msgs_generate_messages_cpp.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/roscpp_generate_messages_cpp.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/roscpp_generate_messages_eus.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/costmap_converter_generate_messages_py.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/geometry_msgs_generate_messages_py.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/geometry_msgs_generate_messages_lisp.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/std_msgs_generate_messages_lisp.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/actionlib_msgs_generate_messages_eus.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/actionlib_generate_messages_lisp.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/aic_auto_dock_generate_messages_eus.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/actionlib_msgs_generate_messages_cpp.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/sensor_msgs_generate_messages_eus.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/actionlib_generate_messages_nodejs.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/rosgraph_msgs_generate_messages_cpp.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/visualization_msgs_generate_messages_cpp.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/nodelet_topic_tools_gencfg.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/bond_generate_messages_py.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/bond_generate_messages_lisp.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/bond_generate_messages_eus.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/nodelet_generate_messages_py.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/nodelet_generate_messages_nodejs.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/nodelet_generate_messages_lisp.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/topic_tools_generate_messages_cpp.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/nodelet_generate_messages_eus.dir/all
 CMakeFiles/gui_way_teb.dir/all: CMakeFiles/teb_local_planner_generate_messages_nodejs.dir/all
 CMakeFiles/gui_way_teb.dir/all: CMakeFiles/rosgraph_msgs_generate_messages_nodejs.dir/all
 CMakeFiles/gui_way_teb.dir/all: CMakeFiles/bond_generate_messages_cpp.dir/all
@@ -4312,15 +4307,12 @@ CMakeFiles/gui_way_teb.dir/all: CMakeFiles/base_local_planner_generate_messages_
 CMakeFiles/gui_way_teb.dir/all: CMakeFiles/base_local_planner_gencfg.dir/all
 CMakeFiles/gui_way_teb.dir/all: CMakeFiles/topic_tools_generate_messages_nodejs.dir/all
 CMakeFiles/gui_way_teb.dir/all: CMakeFiles/sensor_msgs_generate_messages_lisp.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/nodelet_topic_tools_gencfg.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/bond_generate_messages_py.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/bond_generate_messages_lisp.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/bond_generate_messages_eus.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/nodelet_generate_messages_py.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/nodelet_generate_messages_nodejs.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/nodelet_generate_messages_lisp.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/topic_tools_generate_messages_cpp.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/nodelet_generate_messages_eus.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/costmap_2d_generate_messages_cpp.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/dynamic_reconfigure_gencfg.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/costmap_2d_generate_messages_py.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/rosgraph_msgs_generate_messages_py.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/actionlib_generate_messages_cpp.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/costmap_2d_generate_messages_eus.dir/all
 CMakeFiles/gui_way_teb.dir/all: CMakeFiles/map_msgs_generate_messages_py.dir/all
 CMakeFiles/gui_way_teb.dir/all: CMakeFiles/map_msgs_generate_messages_nodejs.dir/all
 CMakeFiles/gui_way_teb.dir/all: CMakeFiles/map_msgs_generate_messages_lisp.dir/all
@@ -4351,12 +4343,20 @@ CMakeFiles/gui_way_teb.dir/all: CMakeFiles/actionlib_msgs_generate_messages_py.d
 CMakeFiles/gui_way_teb.dir/all: CMakeFiles/pcl_msgs_generate_messages_nodejs.dir/all
 CMakeFiles/gui_way_teb.dir/all: CMakeFiles/teb_local_planner_generate_messages_lisp.dir/all
 CMakeFiles/gui_way_teb.dir/all: CMakeFiles/aic_auto_dock_generate_messages_lisp.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/costmap_2d_generate_messages_cpp.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/dynamic_reconfigure_gencfg.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/costmap_2d_generate_messages_py.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/rosgraph_msgs_generate_messages_py.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/actionlib_generate_messages_cpp.dir/all
-CMakeFiles/gui_way_teb.dir/all: CMakeFiles/costmap_2d_generate_messages_eus.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/roscpp_generate_messages_cpp.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/roscpp_generate_messages_eus.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/costmap_converter_generate_messages_py.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/geometry_msgs_generate_messages_py.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/geometry_msgs_generate_messages_lisp.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/std_msgs_generate_messages_lisp.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/actionlib_msgs_generate_messages_eus.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/actionlib_generate_messages_lisp.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/aic_auto_dock_generate_messages_eus.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/actionlib_msgs_generate_messages_cpp.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/sensor_msgs_generate_messages_eus.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/actionlib_generate_messages_nodejs.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/rosgraph_msgs_generate_messages_cpp.dir/all
+CMakeFiles/gui_way_teb.dir/all: CMakeFiles/visualization_msgs_generate_messages_cpp.dir/all
 CMakeFiles/gui_way_teb.dir/all: CMakeFiles/costmap_2d_generate_messages_nodejs.dir/all
 	$(MAKE) -f CMakeFiles/gui_way_teb.dir/build.make CMakeFiles/gui_way_teb.dir/depend
 	$(MAKE) -f CMakeFiles/gui_way_teb.dir/build.make CMakeFiles/gui_way_teb.dir/build
@@ -4654,12 +4654,12 @@ CMakeFiles/aic_auto_dock_generate_messages_cpp.dir/all: CMakeFiles/_aic_auto_doc
 CMakeFiles/aic_auto_dock_generate_messages_cpp.dir/all: CMakeFiles/_aic_auto_dock_generate_messages_check_deps_gui_way2Action.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_cpp.dir/all: CMakeFiles/_aic_auto_dock_generate_messages_check_deps_gui_way2Result.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_cpp.dir/all: CMakeFiles/_aic_auto_dock_generate_messages_check_deps_gui_way2ActionGoal.dir/all
-CMakeFiles/aic_auto_dock_generate_messages_cpp.dir/all: CMakeFiles/actionlib_msgs_generate_messages_cpp.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_cpp.dir/all: CMakeFiles/_aic_auto_dock_generate_messages_check_deps_gui_way2ActionResult.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_cpp.dir/all: CMakeFiles/std_msgs_generate_messages_cpp.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_cpp.dir/all: CMakeFiles/_aic_auto_dock_generate_messages_check_deps_gui_way2Goal.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_cpp.dir/all: CMakeFiles/geometry_msgs_generate_messages_cpp.dir/all
 CMakeFiles/aic_auto_dock_generate_messages_cpp.dir/all: CMakeFiles/_aic_auto_dock_generate_messages_check_deps_gui_way2ActionFeedback.dir/all
+CMakeFiles/aic_auto_dock_generate_messages_cpp.dir/all: CMakeFiles/actionlib_msgs_generate_messages_cpp.dir/all
 	$(MAKE) -f CMakeFiles/aic_auto_dock_generate_messages_cpp.dir/build.make CMakeFiles/aic_auto_dock_generate_messages_cpp.dir/depend
 	$(MAKE) -f CMakeFiles/aic_auto_dock_generate_messages_cpp.dir/build.make CMakeFiles/aic_auto_dock_generate_messages_cpp.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu/CMakeFiles --progress-num=1,2,3,4,5,6,7 "Built target aic_auto_dock_generate_messages_cpp"

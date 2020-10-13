@@ -46,11 +46,12 @@ class teb_planner
     void CB_publishCycle(const ros::TimerEvent& e);
     void CB_publishCycle();
     void setLineObstacle(float x0,float y0,float x1,float y1);
+    void setPointObstacle(float x0,float y0);
     void setViaPoints(const nav_msgs::Path& via_points_msg);
     void clearObstacle();
-    bool isTrajFeasible(double vx, double vy, double omega);
-    bool isTrajFeasible(PoseSE2 robot_pos, PoseSE2 goal_pos);
-    bool findGuiWayPath(vector<PoseSE2>& path);
+    bool isTrajFeasible();
+    // bool isTrajFeasible(PoseSE2 robot_pos, PoseSE2 goal_pos);
+    // bool findGuiWayPath(vector<PoseSE2>& path);
 
   private:
     ros::NodeHandle nh_;

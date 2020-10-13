@@ -1,23 +1,23 @@
 Determining if the pthread_create exist failed with the following output:
 Change Dir: /home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_4d26c/fast"
+Run Build Command:"/usr/bin/make" "cmTC_9ce4c/fast"
 make[2]: Entering directory '/home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu/CMakeFiles/CMakeTmp'
-/usr/bin/make -f CMakeFiles/cmTC_4d26c.dir/build.make CMakeFiles/cmTC_4d26c.dir/build
+/usr/bin/make -f CMakeFiles/cmTC_9ce4c.dir/build.make CMakeFiles/cmTC_9ce4c.dir/build
 make[3]: Entering directory '/home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_4d26c.dir/CheckSymbolExists.c.o
-/usr/bin/cc    -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2     -o CMakeFiles/cmTC_4d26c.dir/CheckSymbolExists.c.o   -c /home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu/CMakeFiles/CMakeTmp/CheckSymbolExists.c
-Linking C executable cmTC_4d26c
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_4d26c.dir/link.txt --verbose=1
-/usr/bin/cc  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2      CMakeFiles/cmTC_4d26c.dir/CheckSymbolExists.c.o  -o cmTC_4d26c -rdynamic 
-CMakeFiles/cmTC_4d26c.dir/CheckSymbolExists.c.o: In function `main':
+Building C object CMakeFiles/cmTC_9ce4c.dir/CheckSymbolExists.c.o
+/usr/bin/cc    -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2     -o CMakeFiles/cmTC_9ce4c.dir/CheckSymbolExists.c.o   -c /home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTC_9ce4c
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_9ce4c.dir/link.txt --verbose=1
+/usr/bin/cc  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2      CMakeFiles/cmTC_9ce4c.dir/CheckSymbolExists.c.o  -o cmTC_9ce4c -rdynamic 
+CMakeFiles/cmTC_9ce4c.dir/CheckSymbolExists.c.o: In function `main':
 /home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu/CMakeFiles/CMakeTmp/CheckSymbolExists.c:8: undefined reference to `pthread_create'
 collect2: error: ld returned 1 exit status
-CMakeFiles/cmTC_4d26c.dir/build.make:97: recipe for target 'cmTC_4d26c' failed
-make[3]: *** [cmTC_4d26c] Error 1
+CMakeFiles/cmTC_9ce4c.dir/build.make:97: recipe for target 'cmTC_9ce4c' failed
+make[3]: *** [cmTC_9ce4c] Error 1
 make[3]: Leaving directory '/home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu/CMakeFiles/CMakeTmp'
-Makefile:126: recipe for target 'cmTC_4d26c/fast' failed
-make[2]: *** [cmTC_4d26c/fast] Error 2
+Makefile:126: recipe for target 'cmTC_9ce4c/fast' failed
+make[2]: *** [cmTC_9ce4c/fast] Error 2
 make[2]: Leaving directory '/home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu/CMakeFiles/CMakeTmp'
 
 File /home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
@@ -38,22 +38,22 @@ int main(int argc, char** argv)
 Determining if the function pthread_create exists in the pthreads failed with the following output:
 Change Dir: /home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_4a689/fast"
+Run Build Command:"/usr/bin/make" "cmTC_4d6ca/fast"
 make[2]: Entering directory '/home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu/CMakeFiles/CMakeTmp'
-/usr/bin/make -f CMakeFiles/cmTC_4a689.dir/build.make CMakeFiles/cmTC_4a689.dir/build
+/usr/bin/make -f CMakeFiles/cmTC_4d6ca.dir/build.make CMakeFiles/cmTC_4d6ca.dir/build
 make[3]: Entering directory '/home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_4a689.dir/CheckFunctionExists.c.o
-/usr/bin/cc    -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2  -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_4a689.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.5/Modules/CheckFunctionExists.c
-Linking C executable cmTC_4a689
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_4a689.dir/link.txt --verbose=1
-/usr/bin/cc  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2  -DCHECK_FUNCTION_EXISTS=pthread_create    CMakeFiles/cmTC_4a689.dir/CheckFunctionExists.c.o  -o cmTC_4a689 -rdynamic -lpthreads 
+Building C object CMakeFiles/cmTC_4d6ca.dir/CheckFunctionExists.c.o
+/usr/bin/cc    -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2  -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_4d6ca.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.5/Modules/CheckFunctionExists.c
+Linking C executable cmTC_4d6ca
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_4d6ca.dir/link.txt --verbose=1
+/usr/bin/cc  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2  -DCHECK_FUNCTION_EXISTS=pthread_create    CMakeFiles/cmTC_4d6ca.dir/CheckFunctionExists.c.o  -o cmTC_4d6ca -rdynamic -lpthreads 
 /usr/bin/ld: cannot find -lpthreads
 collect2: error: ld returned 1 exit status
-CMakeFiles/cmTC_4a689.dir/build.make:97: recipe for target 'cmTC_4a689' failed
-make[3]: *** [cmTC_4a689] Error 1
+CMakeFiles/cmTC_4d6ca.dir/build.make:97: recipe for target 'cmTC_4d6ca' failed
+make[3]: *** [cmTC_4d6ca] Error 1
 make[3]: Leaving directory '/home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu/CMakeFiles/CMakeTmp'
-Makefile:126: recipe for target 'cmTC_4a689/fast' failed
-make[2]: *** [cmTC_4a689/fast] Error 2
+Makefile:126: recipe for target 'cmTC_4d6ca/fast' failed
+make[2]: *** [cmTC_4d6ca/fast] Error 2
 make[2]: Leaving directory '/home/aicrobo/catkin_ws/src/aic_auto_dock/obj-x86_64-linux-gnu/CMakeFiles/CMakeTmp'
 
 
