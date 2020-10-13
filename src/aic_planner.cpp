@@ -114,25 +114,6 @@ bool teb_planner::isTrajFeasible()
   return true;
 }
 
-// bool teb_planner::isTrajFeasible(PoseSE2 robot_pos, PoseSE2 goal_pos)
-// {
-//     for (ObstContainer::const_iterator obst = obst_vector_.begin(); obst != obst_vector_.end(); ++obst)
-//     {
-//       boost::shared_ptr<LineObstacle> pobst = boost::dynamic_pointer_cast<LineObstacle>(*obst);   
-//       if (!pobst)
-//         continue;
-//       double obs_dis = pobst->getMinimumDistance(robot_pos.position(),goal_pos.position());
-//       //double obs_dis = robot_model_->calculateDistance(predict_pose,pobst.get());
-//       if(obs_dis < 0.1)
-//       {
-//         return false;
-//       }
-//     }
-//   // }
-
-//   return true;
-// }
-
 void teb_planner::setViaPoints(const nav_msgs::Path& via_points_msg)
 {
   ROS_INFO_ONCE("Via-points received. This message is printed once.");
@@ -142,4 +123,48 @@ void teb_planner::setViaPoints(const nav_msgs::Path& via_points_msg)
     via_points_.emplace_back(pose.pose.position.x, pose.pose.position.y);
   }
 }
-//end(teb)
+
+void teb_planner::interpolatePath(const tf::Transform& odom_tmp,\
+                                  const nav_msgs::Path& via_points_raw,nav_msgs::Path& path)
+{
+  tf::Quaternion q;
+  q.setRPY(0,0,0);
+  tf::Transform tmp_via_frame(q);
+  tf::Transform odom_via_frame(q);
+  geometry_msgs::PoseStamped via_p;
+  real_2d_array xy;
+  pspline2interpolant spline;
+  unsigned int n = via_points_raw.poses.size();
+  double points_raw[n*2];
+  double cfg_dt = 0.01;
+  double cfg_path_length = getTebConfig().trajectory.max_global_plan_lookahead_dist;
+  double x,y;
+  for(int i=0;i<n;i++)
+  {
+    points_raw[2*i] = via_points_raw.poses[i].pose.position.x;
+    points_raw[2*i+1] = via_points_raw.poses[i].pose.position.y;
+  }
+  xy.setcontent(n,2,points_raw);
+  pspline2build(xy, n, 0,0,spline);
+  
+  double path_length = 0;
+  for (double t=1;t>=0;t=t-cfg_dt)
+  {
+    pspline2calc(spline, t,x,y);
+    tmp_via_frame.setOrigin(tf::Vector3(x,y,0.0));
+    path_length = pspline2arclength(spline,t,1);
+
+    odom_via_frame  = odom_tmp*tmp_via_frame; 
+    via_p.pose.position.x = odom_via_frame.getOrigin().getX();
+    via_p.pose.position.y = odom_via_frame.getOrigin().getY();
+    tf::quaternionTFToMsg(odom_via_frame.getRotation(),via_p.pose.orientation);
+    path.poses.push_back(via_p);
+    if(path_length > cfg_path_length)
+    {
+      break;
+    }
+  }
+  setViaPoints(path);
+}
+
+

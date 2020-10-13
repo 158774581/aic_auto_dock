@@ -1,14 +1,6 @@
 #ifndef AIC_PLANNER_H
 #define AIC_PLANNER_H
 
-#include <actionlib/server/simple_action_server.h>
-#include <actionlib/client/simple_action_client.h>
-#include <aic_auto_dock/gui_way2Action.h>
-#include <aic_auto_dock/math/footprint.h>
-#include <aic_auto_dock/math/pnpoly.hpp>
-#include <aic_auto_dock/math/recognizeUtility.h>
-#include <aic_msgs/Error.h>
-#include <aic_msgs/RobotInfo.h>
 #include <geometry_msgs/Polygon.h>
 #include <geometry_msgs/Twist.h>
 #include <math.h>
@@ -30,9 +22,12 @@
 #include <boost/make_shared.hpp>
 #include <ros/subscriber.h>
 
+#include <alglib/interpolation.h>
+#include <alglib/stdafx.h>
+
 using namespace teb_local_planner;
 using namespace std;
-
+using namespace alglib;
 //plan in odom
 class teb_planner
 {
@@ -48,6 +43,7 @@ class teb_planner
     void setLineObstacle(float x0,float y0,float x1,float y1);
     void setPointObstacle(float x0,float y0);
     void setViaPoints(const nav_msgs::Path& via_points_msg);
+    void interpolatePath(const tf::Transform& odom_tmp,const nav_msgs::Path& via_points_raw,nav_msgs::Path& path);
     void clearObstacle();
     bool isTrajFeasible();
     // bool isTrajFeasible(PoseSE2 robot_pos, PoseSE2 goal_pos);
