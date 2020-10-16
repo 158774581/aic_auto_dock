@@ -132,15 +132,16 @@ include_directories(
   ${EIGEN3_INCLUDE_DIRS}
 )
 
+
 link_directories(
  lib
   ${catkin_LIB_DIRS}
 )
 
 ## Declare a C++ library
-#add_library(aic_extraction
-#
-#)
+ADD_LIBRARY(spline_teb_planner SHARED src/aic_planner.cpp
+)
+target_link_libraries(spline_teb_planner teb_local_planner alglib )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -194,11 +195,12 @@ add_dependencies(aic_auto_dock_testTool ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ca
 add_executable(gui_way_teb src/gui_way_teb.cpp
                         src/math/recognizeUtility.cpp
                         src/math/footprint.cpp
-                        src/aic_planner.cpp)
+                        )
+                        #src/aic_planner.cpp)
 #add_dependencies(gui_way2 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(gui_way_teb ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 #target_link_libraries(gui_way2 ${catkin_LIBRARIES})
-target_link_libraries(gui_way_teb ${catkin_LIBRARIES} alglib)
+target_link_libraries(gui_way_teb ${catkin_LIBRARIES} spline_teb_planner)
 #############
 ## Install ##
 #############

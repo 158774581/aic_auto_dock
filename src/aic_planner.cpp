@@ -138,6 +138,8 @@ void teb_planner::interpolatePath(const tf::Transform& odom_tmp,\
   double points_raw[n*2];
   double cfg_dt = 0.01;
   double cfg_path_length = getTebConfig().trajectory.max_global_plan_lookahead_dist;
+  bool cfg_overwrite = getTebConfig().trajectory.global_plan_overwrite_orientation;
+  cfg_overwrite = true;
   double x,y;
   for(int i=0;i<n;i++)
   {
