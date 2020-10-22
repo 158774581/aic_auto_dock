@@ -343,6 +343,8 @@ bool ParallelLineExtra::infoPreprocess(const aic_laser_feature_line_extraction::
   aic_laser_feature_line_extraction::LineSegmentList detect_lines;
   if (!lidar_position_inverse_)
   {
+    //7_debug
+    ROS_INFO("lidar_pos 0 lines %d",lines.line_segments.size());
     for (vector< aic_laser_feature_line_extraction::LineSegment >::const_iterator cit = lines.line_segments.begin();
          cit != lines.line_segments.end(); cit++)
     {
@@ -391,6 +393,8 @@ bool ParallelLineExtra::infoPreprocess(const aic_laser_feature_line_extraction::
   }
   else
   {
+    //7_debug
+    ROS_INFO("lidar_pos 1 lines %d",lines.line_segments.size());
     for (vector< aic_laser_feature_line_extraction::LineSegment >::const_reverse_iterator cit =
              lines.line_segments.rbegin();
          cit != lines.line_segments.rend(); cit++)
@@ -439,14 +443,15 @@ bool ParallelLineExtra::infoPreprocess(const aic_laser_feature_line_extraction::
       }
     }
   }
-
+  //7_debug
+  ROS_INFO("detect_lines %d",detect_lines.line_segments.size());
+  ROS_INFO("polygon %d %lf %lf",polygon_.extra_polygon.points.size(),polygon_.extra_polygon.points.at(0).x,polygon_.extra_polygon.points.at(0).y);
   if (detect_lines.line_segments.empty())
   {
     ROS_INFO_THROTTLE(1, "parallel line extra: no lines in the extra range");
     ROS_DEBUG_NAMED("docking", "parallel line extra: no lines in the extra range");
     return false;
   }
-
   /*** init extra lines and line indices ***/
   int num = 0;
   for (vector< aic_laser_feature_line_extraction::LineSegment >::iterator cit = detect_lines.line_segments.begin();

@@ -2,6 +2,7 @@
 #define GUI_WAY_H
 
 #include <actionlib/server/simple_action_server.h>
+#include <actionlib/client/simple_action_client.h>
 #include <aic_auto_dock/gui_way2Action.h>
 #include <aic_auto_dock/math/footprint.h>
 #include <aic_auto_dock/math/pnpoly.hpp>
@@ -20,6 +21,8 @@
 #include <vector>
 #include <visualization_msgs/Marker.h>
 #include <aic_auto_dock/math/status.h>
+
+typedef actionlib::SimpleActionClient< aic_auto_dock::gui_way2Action > Client_gui_way;
 
 typedef actionlib::SimpleActionServer< aic_auto_dock::gui_way2Action > Server;
 
@@ -71,12 +74,15 @@ private:
   bool loadParamFromYaml();
   void cleanProcess(void);
 
+  void CB_simple_goal(const geometry_msgs::PoseStampedConstPtr& msg);
+
   Server* as_;
 
   ros::NodeHandle local_nh_, nh_;
   ros::Subscriber setFootprint_sub_;
   ros::Subscriber laser_sub_;
   ros::Subscriber odom_sub_;
+  ros::Subscriber simple_goal_sub_;
   ros::Publisher twist_pub_;
   tf::TransformListener listerner_;
   ros::Subscriber sub_robot_exception_;
@@ -117,6 +123,7 @@ private:
   geometry_msgs::Polygon points_polygon_, points_straight_polygon_padding_, points_turn_polygon_padding_;
 
   double vel_line_, vel_angle_;
+  Client_gui_way* simple_goal_client_;
 };
 
 #endif // GUI_WAY_H

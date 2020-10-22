@@ -42,11 +42,11 @@ gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
   vector< geometry_msgs::Point > points = makeFootprintFromParams(nh);
   points_ = points;
   //debug
-  geometry_msgs::Point debug_p;
-  debug_p.x = 0.5;debug_p.y = 0.25;  points_.push_back(debug_p);
-  debug_p.x = -0.5;debug_p.y = 0.25;  points_.push_back(debug_p);
-  debug_p.x = -0.5;debug_p.y = -0.25;  points_.push_back(debug_p);
-  debug_p.x = 0.5;debug_p.y = -0.25;  points_.push_back(debug_p);
+  // geometry_msgs::Point debug_p;
+  // debug_p.x = 0.5;debug_p.y = 0.25;  points_.push_back(debug_p);
+  // debug_p.x = -0.5;debug_p.y = 0.25;  points_.push_back(debug_p);
+  // debug_p.x = -0.5;debug_p.y = -0.25;  points_.push_back(debug_p);
+  // debug_p.x = 0.5;debug_p.y = -0.25;  points_.push_back(debug_p);
   //end debug
 
   //teb
@@ -360,11 +360,12 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
     feedback.status = aic_auto_dock::gui_way2Feedback::EXECUTING;
     feedback.feedback = aic_auto_dock::gui_way2Feedback::STEP_PROCESS;
     feedback.remaining_distance = port_foot_frame.getOrigin().getX();
-    if (process_.prepareNavStepProcessing)
-      feedback.step_process = aic_auto_dock::gui_way2Feedback::PREPARE_NAV_STEP;
-    else if (process_.prepareStepProcessing)
-      feedback.step_process = aic_auto_dock::gui_way2Feedback::PREPARE_STEP;
-    else if (process_.portStepProcessing)
+    //7_warnning
+    // if (process_.prepareNavStepProcessing)
+    //   feedback.step_process = aic_auto_dock::gui_way2Feedback::PREPARE_NAV_STEP;
+    // else if (process_.prepareStepProcessing)
+    //   feedback.step_process = aic_auto_dock::gui_way2Feedback::PREPARE_STEP;
+    // else if (process_.portStepProcessing)
       feedback.step_process = aic_auto_dock::gui_way2Feedback::PORT_STEP;
     as_->publishFeedback(feedback);
 
@@ -588,7 +589,6 @@ bool gui_way::goalAccept()
           if (process_.prepareNavStepProcessing || process_.prepareStepProcessing)
             return true;
         }
-
         tf::poseMsgToTF(goal->pose, odom_port_frame_);
       }
       else if ((goal->type == aic_auto_dock::gui_way2Goal::STRAIGHT) ||
