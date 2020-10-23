@@ -42,11 +42,13 @@ gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
   vector< geometry_msgs::Point > points = makeFootprintFromParams(nh);
   points_ = points;
   //debug
-  // geometry_msgs::Point debug_p;
-  // debug_p.x = 0.5;debug_p.y = 0.25;  points_.push_back(debug_p);
-  // debug_p.x = -0.5;debug_p.y = 0.25;  points_.push_back(debug_p);
-  // debug_p.x = -0.5;debug_p.y = -0.25;  points_.push_back(debug_p);
-  // debug_p.x = 0.5;debug_p.y = -0.25;  points_.push_back(debug_p);
+  geometry_msgs::Point debug_p;
+  double debug_x = 1;
+  debug_p.x = debug_x;debug_p.y = 0.25;  points_.push_back(debug_p);
+  debug_p.x = -debug_x;debug_p.y = 0.25;  points_.push_back(debug_p);
+  debug_p.x = -debug_x;debug_p.y = -0.25;  points_.push_back(debug_p);
+  debug_p.x = debug_x;debug_p.y = -0.25;  points_.push_back(debug_p);
+  accept_robotInfo_ = true;
   //end debug
 
   //teb
@@ -472,31 +474,34 @@ void gui_way::Laserhander(const sensor_msgs::LaserScan& msg)
 {
   tf::Quaternion q;
   planner_->clearObstacle();
+  geometry_msgs::Point last_point;
+  last_point.x = 1e6;
+  last_point.y = 1e6;
   //U型的车库障碍物
-  double cfg_x = 0.8;
-  double cfg_y = 0.5;
-  //add obstacles
-  q.setRPY(0,0,0);
-  tf::Transform goal_obs_frame(q,tf::Vector3(cfg_x,-cfg_y,0));
-  tf::Transform goal_obs1_frame(q,tf::Vector3(-cfg_x,-cfg_y,0));
-  tf::Transform odom_obs_frame = odom_port_frame_*goal_obs_frame;
-  tf::Transform odom_obs1_frame = odom_port_frame_*goal_obs1_frame;
-  planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
-                            odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
+//  double cfg_x = preparePosition_;
+//  double cfg_y = 0.5;
+//  //add obstacles
+//  q.setRPY(0,0,0);
+//  tf::Transform goal_obs_frame(q,tf::Vector3(cfg_x,-cfg_y,0));
+//  tf::Transform goal_obs1_frame(q,tf::Vector3(-cfg_x,-cfg_y,0));
+//  tf::Transform odom_obs_frame = odom_port_frame_*goal_obs_frame;
+//  tf::Transform odom_obs1_frame = odom_port_frame_*goal_obs1_frame;
+//  planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
+//                            odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
 
-  // goal_obs_frame.setOrigin(tf::Vector3(-cfg_x,-cfg_y,0));
-  // goal_obs1_frame.setOrigin(tf::Vector3(-cfg_x,cfg_y,0));
-  // odom_obs_frame = odom_port_frame_*goal_obs_frame;
-  // odom_obs1_frame = odom_port_frame_*goal_obs1_frame;
-  // planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
-  //                           odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
+//  // goal_obs_frame.setOrigin(tf::Vector3(-cfg_x,-cfg_y,0));
+//  // goal_obs1_frame.setOrigin(tf::Vector3(-cfg_x,cfg_y,0));
+//  // odom_obs_frame = odom_port_frame_*goal_obs_frame;
+//  // odom_obs1_frame = odom_port_frame_*goal_obs1_frame;
+//  // planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
+//  //                           odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
 
-  goal_obs_frame.setOrigin(tf::Vector3(-cfg_x,cfg_y,0));
-  goal_obs1_frame.setOrigin(tf::Vector3(cfg_x,cfg_y,0));
-  odom_obs_frame = odom_port_frame_*goal_obs_frame;
-  odom_obs1_frame = odom_port_frame_*goal_obs1_frame;
-  planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
-                            odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
+//  goal_obs_frame.setOrigin(tf::Vector3(-cfg_x,cfg_y,0));
+//  goal_obs1_frame.setOrigin(tf::Vector3(cfg_x,cfg_y,0));
+//  odom_obs_frame = odom_port_frame_*goal_obs_frame;
+//  odom_obs1_frame = odom_port_frame_*goal_obs1_frame;
+//  planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
+//                            odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
 
   if (accept_robotInfo_)
   {
@@ -515,10 +520,15 @@ void gui_way::Laserhander(const sensor_msgs::LaserScan& msg)
       tf::Transform foot_pt_frame = foot_laser_frame_ * laser_pt_frame;
       tf::Transform odom_pt_frame = realTime_odom_*foot_pt_frame;
       //将距离小于1.5m的障碍物添加到TEB规划避障中
-      double cfg_dis = 1;
-      if (hypot(foot_pt_frame.getOrigin().getX(),foot_pt_frame.getOrigin().getY())<cfg_dis)
+      double cfg_dis = 3;
+      double cfg_gap = 0.1;
+      if (hypot(foot_pt_frame.getOrigin().getX(),foot_pt_frame.getOrigin().getY())<cfg_dis&&\
+          dist_laser > msg.range_min && dist_laser < msg.range_max&&\
+          hypot(last_point.x -x,last_point.y-y)>cfg_gap)
       {
-         planner_->setPointObstacle(odom_pt_frame.getOrigin().getX(),odom_pt_frame.getOrigin().getY());
+        planner_->setPointObstacle(odom_pt_frame.getOrigin().getX(),odom_pt_frame.getOrigin().getY());
+        last_point.x = x;
+        last_point.y = y;
       }
 
       if (avoidType_ == AvoidType::ROUND)
@@ -557,8 +567,9 @@ void gui_way::Laserhander(const sensor_msgs::LaserScan& msg)
     // accept_laserScan = true;
   }
   else
-    ROS_INFO_ONCE("move avoid node cannot get the robot information, temporarily shut down obstacle avoidance function!");
+    ROS_ERROR("move avoid node cannot get the robot information,shut down obstacle avoidance function!");
 }
+
 
 bool gui_way::goalAccept()
 {

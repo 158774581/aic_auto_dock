@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib_msgs
   aic_laser_feature_line_extraction
   message_generation
+  teb_local_planner
 )
 find_package(Eigen3 REQUIRED)
 
@@ -137,6 +138,11 @@ link_directories(
   ${catkin_LIB_DIRS}
 )
 
+## Declare a C++ library
+ADD_LIBRARY(spline_teb_planner SHARED src/aic_planner.cpp
+)
+target_link_libraries(spline_teb_planner teb_local_planner alglib )
+
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
@@ -182,14 +188,19 @@ target_link_libraries(aic_auto_dock_testTool
 )
 add_dependencies(aic_auto_dock_testTool ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable(gui_way2 src/gui_way.cpp
+#add_executable(gui_way2 src/gui_way.cpp
+#                        src/math/recognizeUtility.cpp
+#                        src/math/footprint.cpp)
+
+add_executable(gui_way_teb src/gui_way_teb.cpp
                         src/math/recognizeUtility.cpp
-                        src/math/footprint.cpp)
-
-
+                        src/math/footprint.cpp
+                        )
                         #src/aic_planner.cpp)
-add_dependencies(gui_way2 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(gui_way2 ${catkin_LIBRARIES})
+#add_dependencies(gui_way2 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(gui_way_teb ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+#target_link_libraries(gui_way2 ${catkin_LIBRARIES})
+target_link_libraries(gui_way_teb ${catkin_LIBRARIES} spline_teb_planner)
 #############
 ## Install ##
 #############
@@ -231,6 +242,7 @@ install(
     ${PROJECT_NAME}_node
     aic_auto_dock_testTool
     #gui_way2
+    gui_way_teb
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
