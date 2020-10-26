@@ -23,6 +23,26 @@ teb_planner::teb_planner(ros::NodeHandle& nh):nh_(nh)
   
 }
 
+//------------ teb planner ----------------
+teb_planner::teb_planner(ros::NodeHandle& nh,vector< geometry_msgs::Point > footprint):nh_(nh)
+{
+  config_.loadRosParamFromNodeHandle(nh);
+  //ros::Timer publish_timer = n.createTimer(ros::Duration(0.1), CB_publishCycle);
+    // Setup visualization
+  visual_ = TebVisualizationPtr(new TebVisualization(nh, config_));
+  
+  // Setup robot shape model
+  robot_model_ = setRobotFootprintPolygon(footprint);
+
+  // Setup planner (homotopy class planning or just the local teb planner)
+  if (config_.hcp.enable_homotopy_class_planning)
+    planner_ = PlannerInterfacePtr(new HomotopyClassPlanner(config_, &obst_vector_, robot_model_, visual_, &via_points_));
+  else
+    planner_ = PlannerInterfacePtr(new TebOptimalPlanner(config_, &obst_vector_, robot_model_, visual_, &via_points_));
+  
+}
+
+
 bool teb_planner::getVelocityCommand(double& vx, double& vy, double& omega, int look_ahead_poses)
 {
   bool succeed  = planner_->plan(startpose_, endpose_,&startvel_,false); // hardcoded start and goal for testing purposes
@@ -169,4 +189,15 @@ void teb_planner::interpolatePath(const tf::Transform& odom_tmp,\
   setViaPoints(path);
 }
 
-
+RobotFootprintModelPtr teb_planner::setRobotFootprintPolygon( vector< geometry_msgs::Point > points)
+{
+  Point2dContainer polygon;
+  Eigen::Vector2d pt;
+  for(auto it:points)
+  {
+    pt.x() = it.x;
+    pt.y() = it.y;
+    polygon.push_back(pt);
+  }
+  return boost::make_shared<PolygonRobotFootprint>(polygon);
+}

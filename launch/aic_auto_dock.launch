@@ -78,14 +78,19 @@
         <param name= "~parallel/scan_frame" value="$(arg laser_frame)" />
         <param name= "~parallel/linesMinGap" value="0.9" />
         <param name= "~parallel/linesMaxGap" value="1.1" />
-        <param name= "~parallel/maxmunLength" value="0.8" />
-        <param name= "~parallel/minimunLength" value="0.7" />
+        <param name= "~parallel/min_boards_gap" value="1.35" />
+        <param name= "~parallel/max_boards_gap" value="1.15" />
+        <param name= "~parallel/maxmunLength" value="1.37" />
+        <param name= "~parallel/minimunLength" value="1.17" />
         <param name= "~parallel/linesMinAngle" value="-0.087" />
         <param name= "~parallel/linesMaxAngle" value="0.087" />
         <param name= "~parallel/charging_port" value="1.1" />
         <param name= "~parallel/charging_port_delta_y" value="0.0" />
         <param name= "~parallel/charging_port_delta_angle" value="0.0" />
         <param name= "~parallel/delta_backDist" value="0.0" />
+      	<param name= "~parallel/recognize_deltaX_" value="2.0" />
+        <param name= "~parallel/recognize_deltaY_" value="2.0" />
+
 
 
         <!-- line_extra_node -->

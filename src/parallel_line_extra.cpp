@@ -439,7 +439,6 @@ bool ParallelLineExtra::infoPreprocess(const aic_laser_feature_line_extraction::
       }
     }
   }
-
   if (detect_lines.line_segments.empty())
   {
     ROS_INFO_THROTTLE(1, "parallel line extra: no lines in the extra range");

@@ -5,7 +5,7 @@ gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
 {
   as_->start();
 
-  setFootprint_sub_ = nh_.subscribe("/move_base/local_costmap/set_footprint", 10, &gui_way::setFootprintCallback, this);
+  setFootprint_sub_ = nh_.subscribe("/move_base/local_costmap/footprint", 10, &gui_way::setFootprintCallback, this);
   laser_sub_ = nh_.subscribe("/scan", 10, &gui_way::LaserCallback, this);
   odom_sub_ = nh_.subscribe("/odom", 1, &gui_way::odomCallback, this);
   twist_pub_ = nh_.advertise< geometry_msgs::Twist >("/dock_cmd_vel", 10);

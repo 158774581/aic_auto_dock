@@ -8,7 +8,7 @@
 
 gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
     : nh_(nh), local_nh_(local_nh), as_(new Server(local_nh, "gui_way", boost::bind(&gui_way::start, this, _1), false)),
-    planner_(new teb_planner(local_nh)),simple_goal_client_(new Client_gui_way("aic_auto_dock_guiway/gui_way", true))
+    simple_goal_client_(new Client_gui_way("aic_auto_dock_guiway/gui_way", true))
 {
     /***
    * init launch param
@@ -41,20 +41,23 @@ gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
 
   vector< geometry_msgs::Point > points = makeFootprintFromParams(nh);
   points_ = points;
-  //debug
+    //debug
   geometry_msgs::Point debug_p;
   debug_p.x = 0.5;debug_p.y = 0.25;  points_.push_back(debug_p);
   debug_p.x = -0.5;debug_p.y = 0.25;  points_.push_back(debug_p);
   debug_p.x = -0.5;debug_p.y = -0.25;  points_.push_back(debug_p);
   debug_p.x = 0.5;debug_p.y = -0.25;  points_.push_back(debug_p);
+  accept_robotInfo_ = true;
   //end debug
-
-  //teb
-  simple_goal_sub_ = nh.subscribe("/move_base_simple/goal1", 1, &gui_way::CB_simple_goal,this);
-  //ros::Timer publish_timer = nh.createTimer(ros::Duration(0.1), \
-  //                           boost::bind(&teb_planner::CB_publishCycle,planner_,_1));
-  
-  //end 
+  if(points_.size() >0)
+  {
+    planner_ = new teb_planner(local_nh,points_);
+    accept_robotInfo_ = true;
+  }
+  else
+  {
+    planner_ = new teb_planner(local_nh);
+  }
   double half_length = 0, half_width = 0;
   for (vector< geometry_msgs::Point >::iterator cit = points.begin(); cit != points.end(); cit++)
   {
@@ -65,7 +68,11 @@ gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
   }
   half_length_ = half_length;
   half_width_ = half_width;
-  //accept_robotInfo_ = true;
+
+  //teb
+  simple_goal_sub_ = nh.subscribe("/move_base_simple/goal1", 1, &gui_way::CB_simple_goal,this);
+  //ros::Timer publish_timer = nh.createTimer(ros::Duration(0.1), \
+  //                           boost::bind(&teb_planner::CB_publishCycle,planner_,_1));
 
   try
   {
@@ -133,6 +140,7 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
   points_polygon_.points.clear();
   points_straight_polygon_padding_.points.clear();
   points_turn_polygon_padding_.points.clear();
+  enter_port_flag_ = false;
   for (vector< geometry_msgs::Point >::iterator cit = points_.begin(); cit != points_.end(); cit++)
   {
     geometry_msgs::Point32 pt_straight;
@@ -171,8 +179,11 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
   {
     rate.sleep();
 
-    if (accept_laserScan)
+    if (accept_laserScan&&accept_odom)
+    {
       accept_laserScan = false;
+      accept_odom = false;
+    }
     else
       continue;
 
@@ -188,27 +199,14 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
     begin_time = ros::Time::now().toSec();
 
     //teb planner
-    tf::StampedTransform odom_foot_frame;
-     /***/
-    try
-    {
-      listerner_.waitForTransform("odom", "base_footprint", ros::Time(0), ros::Duration(10.0));
-      listerner_.lookupTransform("odom", "base_footprint", ros::Time(0), odom_foot_frame);
-      initial_pos.x()  = odom_foot_frame.getOrigin().getX();
-      initial_pos.y()  = odom_foot_frame.getOrigin().getY();
-      initial_pos.theta()  = tf::getYaw(odom_foot_frame.getRotation());
-    }
-    catch (tf::TransformException ex)
-    {
-      initial_pos.x()  = 0;
-      initial_pos.y()  = 0;
-      initial_pos.theta()  = 0;
-      ROS_ERROR("can't find transform 'odom','base_footprint'");
-    }
+    initial_pos.x()  = realTime_odom_.getOrigin().getX();
+    initial_pos.y()  = realTime_odom_.getOrigin().getY();
+    initial_pos.theta()  = tf::getYaw(realTime_odom_.getRotation());
+
     tf::Transform odom_goal_frame(odom_port_frame_);
     q.setRPY(0,0,0);
     tf::Transform goal_nav_frame(q);
-    target_foot_frame = (odom_foot_frame.inverse()*odom_port_frame_).inverse();
+    target_foot_frame = (realTime_odom_.inverse()*odom_port_frame_).inverse();
     double cfg_y = 0.2;
     double cfg_yaw = 0.2;
     //get global path
@@ -228,13 +226,13 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
       via_p.pose.position.x = 0;  
       via_p.pose.position.y = 0;  
       path_raw.poses.push_back(via_p);
-      via_p.pose.position.x = 0.3*preparePosition_;  
+      via_p.pose.position.x = 0.3*preparePosition_;
       via_p.pose.position.y = 0;  
       path_raw.poses.push_back(via_p);
-      via_p.pose.position.x = 0.6*preparePosition_;  
+      via_p.pose.position.x = 0.6*preparePosition_;
       via_p.pose.position.y = 0;  
       path_raw.poses.push_back(via_p);
-      via_p.pose.position.x = preparePosition_;  
+      via_p.pose.position.x = preparePosition_;
       via_p.pose.position.y = 0;  
       path_raw.poses.push_back(via_p);
       via_p.pose.position.x = x;  
@@ -243,6 +241,7 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
     }
     else
     {
+      enter_port_flag_ = true;
       double aux_point[] = {0,0,  x*0.3,0,  x*0.6,0,  x*0.8,0,  x,y};
       via_p.pose.position.x = 0;  
       via_p.pose.position.y = 0;  
@@ -440,6 +439,7 @@ void gui_way::odomCallback(const nav_msgs::OdometryConstPtr& msg)
   realTime_odom_.setOrigin(vec);
   realTime_odom_.setRotation(q);
   realTime_twist_ = msg->twist.twist;
+  accept_odom = true;
 }
 
 void gui_way::setFootprintCallback(const geometry_msgs::Polygon& msg)
@@ -471,31 +471,34 @@ void gui_way::Laserhander(const sensor_msgs::LaserScan& msg)
 {
   tf::Quaternion q;
   planner_->clearObstacle();
+  geometry_msgs::Point last_point;
+  last_point.x = 1e6;
+  last_point.y = 1e6;
   //U型的车库障碍物
-  double cfg_x = 0.8;
-  double cfg_y = 0.5;
-  //add obstacles
-  q.setRPY(0,0,0);
-  tf::Transform goal_obs_frame(q,tf::Vector3(cfg_x,-cfg_y,0));
-  tf::Transform goal_obs1_frame(q,tf::Vector3(-cfg_x,-cfg_y,0));
-  tf::Transform odom_obs_frame = odom_port_frame_*goal_obs_frame;
-  tf::Transform odom_obs1_frame = odom_port_frame_*goal_obs1_frame;
-  planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
-                            odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
+//  double cfg_x = preparePosition_;
+//  double cfg_y = 0.5;
+//  //add obstacles
+//  q.setRPY(0,0,0);
+//  tf::Transform goal_obs_frame(q,tf::Vector3(cfg_x,-cfg_y,0));
+//  tf::Transform goal_obs1_frame(q,tf::Vector3(-cfg_x,-cfg_y,0));
+//  tf::Transform odom_obs_frame = odom_port_frame_*goal_obs_frame;
+//  tf::Transform odom_obs1_frame = odom_port_frame_*goal_obs1_frame;
+//  planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
+//                            odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
 
-  // goal_obs_frame.setOrigin(tf::Vector3(-cfg_x,-cfg_y,0));
-  // goal_obs1_frame.setOrigin(tf::Vector3(-cfg_x,cfg_y,0));
-  // odom_obs_frame = odom_port_frame_*goal_obs_frame;
-  // odom_obs1_frame = odom_port_frame_*goal_obs1_frame;
-  // planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
-  //                           odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
+//  // goal_obs_frame.setOrigin(tf::Vector3(-cfg_x,-cfg_y,0));
+//  // goal_obs1_frame.setOrigin(tf::Vector3(-cfg_x,cfg_y,0));
+//  // odom_obs_frame = odom_port_frame_*goal_obs_frame;
+//  // odom_obs1_frame = odom_port_frame_*goal_obs1_frame;
+//  // planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
+//  //                           odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
 
-  goal_obs_frame.setOrigin(tf::Vector3(-cfg_x,cfg_y,0));
-  goal_obs1_frame.setOrigin(tf::Vector3(cfg_x,cfg_y,0));
-  odom_obs_frame = odom_port_frame_*goal_obs_frame;
-  odom_obs1_frame = odom_port_frame_*goal_obs1_frame;
-  planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
-                            odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
+//  goal_obs_frame.setOrigin(tf::Vector3(-cfg_x,cfg_y,0));
+//  goal_obs1_frame.setOrigin(tf::Vector3(cfg_x,cfg_y,0));
+//  odom_obs_frame = odom_port_frame_*goal_obs_frame;
+//  odom_obs1_frame = odom_port_frame_*goal_obs1_frame;
+//  planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
+//                            odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
 
   if (accept_robotInfo_)
   {
@@ -514,10 +517,15 @@ void gui_way::Laserhander(const sensor_msgs::LaserScan& msg)
       tf::Transform foot_pt_frame = foot_laser_frame_ * laser_pt_frame;
       tf::Transform odom_pt_frame = realTime_odom_*foot_pt_frame;
       //将距离小于1.5m的障碍物添加到TEB规划避障中
-      double cfg_dis = 1;
-      if (hypot(foot_pt_frame.getOrigin().getX(),foot_pt_frame.getOrigin().getY())<cfg_dis)
+      double cfg_dis = planner_->getTebConfig().trajectory.max_global_plan_lookahead_dist;
+      double cfg_gap = 0.1;
+      if (hypot(foot_pt_frame.getOrigin().getX(),foot_pt_frame.getOrigin().getY())<cfg_dis&&\
+          dist_laser > msg.range_min && dist_laser < msg.range_max&&\
+          hypot(last_point.x -x,last_point.y-y)>cfg_gap)
       {
-         planner_->setPointObstacle(odom_pt_frame.getOrigin().getX(),odom_pt_frame.getOrigin().getY());
+        planner_->setPointObstacle(odom_pt_frame.getOrigin().getX(),odom_pt_frame.getOrigin().getY());
+        last_point.x = x;
+        last_point.y = y;
       }
 
       if (avoidType_ == AvoidType::ROUND)
@@ -556,7 +564,7 @@ void gui_way::Laserhander(const sensor_msgs::LaserScan& msg)
     // accept_laserScan = true;
   }
   else
-    ROS_INFO_ONCE("move avoid node cannot get the robot information, temporarily shut down obstacle avoidance function!");
+    ROS_ERROR_ONCE("move avoid node cannot get the robot information,shut down obstacle avoidance function!");
 }
 
 bool gui_way::goalAccept()
@@ -583,13 +591,18 @@ bool gui_way::goalAccept()
       }
       else if (goal->type == aic_auto_dock::gui_way2Goal::INITPORT)
       {
-        if (process_.process == StepProcess::Process::prepareStep)
-        {
-          if (process_.prepareNavStepProcessing || process_.prepareStepProcessing)
-            return true;
-        }
-
-        tf::poseMsgToTF(goal->pose, odom_port_frame_);
+        //7_warinning
+//        if (process_.process == StepProcess::Process::prepareStep)
+//        {
+//          if (process_.prepareNavStepProcessing || process_.prepareStepProcessing)
+//            return true;
+//        }
+        ROS_WARN("heeeee");
+//        if(enter_port_flag_ == false)
+//        {
+//          tf::poseMsgToTF(goal->pose, odom_port_frame_);
+//          ROS_INFO("initport %lf %lf %lf",goal->pose.position.x,goal->pose.position.y,tf::getYaw(odom_port_frame_.getRotation()));
+//        }
       }
       else if ((goal->type == aic_auto_dock::gui_way2Goal::STRAIGHT) ||
                (goal->type == aic_auto_dock::gui_way2Goal::BACK))

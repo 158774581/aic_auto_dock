@@ -33,6 +33,7 @@ class teb_planner
 {
   public:
     teb_planner(ros::NodeHandle& nh);
+    teb_planner(ros::NodeHandle& nh,vector< geometry_msgs::Point > footprint);
     ~teb_planner(){};
     bool getVelocityCommand(double& vx, double& vy, double& omega, int look_ahead_poses);
     bool setplan(PoseSE2& startpose,geometry_msgs::Twist& startVel,PoseSE2& endpose);
@@ -46,6 +47,8 @@ class teb_planner
     void interpolatePath(const tf::Transform& odom_tmp,const nav_msgs::Path& via_points_raw,nav_msgs::Path& path);
     void clearObstacle();
     bool isTrajFeasible();
+   // RobotFootprintModelPtr setRobotFootprintPolygon(Point2dContainer polygon);
+    RobotFootprintModelPtr setRobotFootprintPolygon( vector< geometry_msgs::Point > points);
     // bool isTrajFeasible(PoseSE2 robot_pos, PoseSE2 goal_pos);
     // bool findGuiWayPath(vector<PoseSE2>& path);
 

@@ -134,14 +134,14 @@ include_directories(
 
 
 link_directories(
- lib
   ${catkin_LIB_DIRS}
+  lib
 )
 
 ## Declare a C++ library
 ADD_LIBRARY(spline_teb_planner SHARED src/aic_planner.cpp
 )
-target_link_libraries(spline_teb_planner teb_local_planner alglib )
+target_link_libraries(spline_teb_planner teb_local_planner alglib)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries

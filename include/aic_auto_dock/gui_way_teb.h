@@ -119,7 +119,7 @@ private:
   tf::StampedTransform foot_laser_frame_;
   std::string laser_frame_name_;
   double half_length_ = 0.0, half_width_ = 0.0;
-  bool accept_robotInfo_ = false, accept_laserScan = false;
+  bool accept_robotInfo_ = false, accept_laserScan = false,accept_odom = false;
   AvoidType::Avoid_type avoidType_; // 0:circle  1:square
 
   actionlibStatus actionlib_status_;
@@ -130,6 +130,7 @@ private:
 
   double vel_line_, vel_angle_;
   //teb
+  bool enter_port_flag_ = false;
   vector<PoseSE2> global_path_;
   double goal_inflation_x_,goal_inflation_y_;
 

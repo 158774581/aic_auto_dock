@@ -1437,6 +1437,7 @@ bool autodock_interface::loadParamFromYaml(std::string tag, std::string name)
             scale.push_back(behavior_list[i]["scale"]);
             rate.push_back(behavior_list[i]["rate"]);
             average_times.push_back(behavior_list[i]["average_times"]);
+            ROS_INFO("aic auto dock has got average_times");
             recognize_deltaX.push_back(behavior_list[i]["recognize_deltaX"]);
             recognize_deltaY.push_back(behavior_list[i]["recognize_deltaY"]);
           }
