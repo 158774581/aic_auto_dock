@@ -136,6 +136,7 @@ private:
 
   teb_planner* planner_;
   Client_gui_way* simple_goal_client_;
+  double port_length_,port_width_;
 
   sensor_msgs::LaserScan scan_msg_;
 };
