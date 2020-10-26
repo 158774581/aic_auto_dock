@@ -42,12 +42,11 @@ gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
   vector< geometry_msgs::Point > points = makeFootprintFromParams(nh);
   points_ = points;
     //debug
-  geometry_msgs::Point debug_p;
-  debug_p.x = 0.5;debug_p.y = 0.25;  points_.push_back(debug_p);
-  debug_p.x = -0.5;debug_p.y = 0.25;  points_.push_back(debug_p);
-  debug_p.x = -0.5;debug_p.y = -0.25;  points_.push_back(debug_p);
-  debug_p.x = 0.5;debug_p.y = -0.25;  points_.push_back(debug_p);
-  accept_robotInfo_ = true;
+  // geometry_msgs::Point debug_p;
+  // debug_p.x = 0.25;debug_p.y = 0.25;  points_.push_back(debug_p);
+  // debug_p.x = -0.25;debug_p.y = 0.25;  points_.push_back(debug_p);
+  // debug_p.x = -0.25;debug_p.y = -0.25;  points_.push_back(debug_p);
+  // debug_p.x = 0.25;debug_p.y = -0.25;  points_.push_back(debug_p);
   //end debug
   if(points_.size() >0)
   {

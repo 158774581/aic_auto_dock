@@ -32,11 +32,11 @@
    vertices: [[-0.5, -0.35], [-0.5, 0.35], [0.5, 0.35], [0.5, -0.35]]
    #type: "circular"
    #radius: 0.35
-   ##type: "two_circles"
-   ##front_offset: 0.5
-   ##front_radius: 0.35
-   ##rear_offset: 0
-   ##rear_radius: 0.35
+  #  type: "two_circles"
+  #  front_offset: 0.5
+  #  front_radius: 0.2
+  #  rear_offset: 0
+  #  rear_radius: 0.2
   # type: "line"
   # line_start: [-0.5, 0.0]
   # line_end: [0.5, 0.0]
