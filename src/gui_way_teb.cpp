@@ -359,11 +359,12 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
     feedback.status = aic_auto_dock::gui_way2Feedback::EXECUTING;
     feedback.feedback = aic_auto_dock::gui_way2Feedback::STEP_PROCESS;
     feedback.remaining_distance = port_foot_frame.getOrigin().getX();
-    if (process_.prepareNavStepProcessing)
-      feedback.step_process = aic_auto_dock::gui_way2Feedback::PREPARE_NAV_STEP;
-    else if (process_.prepareStepProcessing)
-      feedback.step_process = aic_auto_dock::gui_way2Feedback::PREPARE_STEP;
-    else if (process_.portStepProcessing)
+    //7_warnning
+    // if (process_.prepareNavStepProcessing)
+    //   feedback.step_process = aic_auto_dock::gui_way2Feedback::PREPARE_NAV_STEP;
+    // else if (process_.prepareStepProcessing)
+    //   feedback.step_process = aic_auto_dock::gui_way2Feedback::PREPARE_STEP;
+    // else if (process_.portStepProcessing)
       feedback.step_process = aic_auto_dock::gui_way2Feedback::PORT_STEP;
     as_->publishFeedback(feedback);
 
@@ -567,6 +568,7 @@ void gui_way::Laserhander(const sensor_msgs::LaserScan& msg)
     ROS_ERROR_ONCE("move avoid node cannot get the robot information,shut down obstacle avoidance function!");
 }
 
+
 bool gui_way::goalAccept()
 {
   if (as_->isPreemptRequested())
@@ -591,18 +593,12 @@ bool gui_way::goalAccept()
       }
       else if (goal->type == aic_auto_dock::gui_way2Goal::INITPORT)
       {
-        //7_warinning
-//        if (process_.process == StepProcess::Process::prepareStep)
-//        {
-//          if (process_.prepareNavStepProcessing || process_.prepareStepProcessing)
-//            return true;
-//        }
-        ROS_WARN("heeeee");
-//        if(enter_port_flag_ == false)
-//        {
-//          tf::poseMsgToTF(goal->pose, odom_port_frame_);
-//          ROS_INFO("initport %lf %lf %lf",goal->pose.position.x,goal->pose.position.y,tf::getYaw(odom_port_frame_.getRotation()));
-//        }
+        if (process_.process == StepProcess::Process::prepareStep)
+        {
+          if (process_.prepareNavStepProcessing || process_.prepareStepProcessing)
+            return true;
+        }
+        tf::poseMsgToTF(goal->pose, odom_port_frame_);
       }
       else if ((goal->type == aic_auto_dock::gui_way2Goal::STRAIGHT) ||
                (goal->type == aic_auto_dock::gui_way2Goal::BACK))

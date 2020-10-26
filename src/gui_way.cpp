@@ -1,7 +1,8 @@
 #include <aic_auto_dock/gui_way.h>
 
 gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
-    : nh_(nh), local_nh_(local_nh), as_(new Server(local_nh, "gui_way", boost::bind(&gui_way::start, this, _1), false))
+    : nh_(nh), local_nh_(local_nh), as_(new Server(local_nh, "gui_way", boost::bind(&gui_way::start, this, _1), false)),\
+    simple_goal_client_(new Client_gui_way("aic_auto_dock_guiway/gui_way", true))
 {
   as_->start();
 
@@ -14,6 +15,7 @@ gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
   marker_pub_ = local_nh_.advertise< visualization_msgs::Marker >("extra_range", 10);
   virtual_path_pub_ = local_nh_.advertise< visualization_msgs::Marker >("virtual_path", 10);
 
+  simple_goal_sub_ = nh_.subscribe("/move_base_simple/goal1", 1, &gui_way::CB_simple_goal,this);
   vector< geometry_msgs::Point > points = makeFootprintFromParams(nh);
   points_ = points;
 
@@ -27,12 +29,11 @@ gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
   }
   half_length_ = half_length;
   half_width_ = half_width;
-  accept_robotInfo_ = true;
 
   try
   {
-    listerner_.waitForTransform("base_footprint", "laser_link", ros::Time(0), ros::Duration(10.0));
-    listerner_.lookupTransform("base_footprint", "laser_link", ros::Time(0), foot_laser_frame_);
+    listerner_.waitForTransform("base_footprint", "base_laser_link", ros::Time(0), ros::Duration(10.0));
+    listerner_.lookupTransform("base_footprint", "base_laser_link", ros::Time(0), foot_laser_frame_);
   }
   catch (tf::TransformException ex)
   {
@@ -1014,6 +1015,7 @@ void gui_way::setFootprintCallback(const geometry_msgs::Polygon& msg)
 
 void gui_way::LaserCallback(const sensor_msgs::LaserScan& msg)
 {
+   accept_laserScan = true;
   if (accept_robotInfo_)
   {
     //避障模块
@@ -1041,7 +1043,7 @@ void gui_way::LaserCallback(const sensor_msgs::LaserScan& msg)
         if (dist_laser > msg.range_min && dist_laser < msg.range_max && !boolcarBody && boolcarBodyPadding)
         {
           danger_mark_ = true;
-          accept_laserScan = true;
+          //accept_laserScan = true;
 
           return;
         }
@@ -1056,7 +1058,7 @@ void gui_way::LaserCallback(const sensor_msgs::LaserScan& msg)
         if (dist_laser > msg.range_min && dist_laser < msg.range_max && !boolcarBody && boolcarBodyPadding)
         {
           danger_mark_ = true;
-          accept_laserScan = true;
+          //accept_laserScan = true;
 
           return;
         }
@@ -1064,7 +1066,7 @@ void gui_way::LaserCallback(const sensor_msgs::LaserScan& msg)
     }
 
     danger_mark_ = false;
-    accept_laserScan = true;
+    //accept_laserScan = true;
   }
   else
     ROS_INFO("move avoid node cannot get the robot information, temporarily shut down obstacle avoidance function!");
@@ -1151,6 +1153,10 @@ bool gui_way::goalAccept()
 
 void gui_way::pubMarkerCarStraightSquare()
 {
+  if (accept_robotInfo_ == false)
+  {
+    return;
+  }
   visualization_msgs::Marker marker_msg;
 
   marker_msg.ns = "move avoid square extra_range";
@@ -1200,6 +1206,10 @@ void gui_way::pubMarkerCarStraightSquare()
 
 void gui_way::pubMarkerCarTurnSquare()
 {
+  if (accept_robotInfo_ == false)
+  {
+    return;
+  }
   visualization_msgs::Marker marker_msg;
 
   marker_msg.ns = "move avoid square extra_range";
@@ -1421,6 +1431,44 @@ void gui_way::cleanProcess()
   process_.portStepProcessing = false;
   process_.portStepResult = false;
   process_.portStepInit = false;
+}
+
+void gui_way::CB_simple_goal(const geometry_msgs::PoseStampedConstPtr& msg)
+{
+  tf::StampedTransform odom_map_frame;
+  tf::Transform odom_goal_frame;
+  tf::Transform map_goal_frame;
+  tf::Quaternion q;
+  q.setRPY(0,0,tf::getYaw(msg.get()->pose.orientation));
+  listerner_.waitForTransform("odom", "map", ros::Time(0), ros::Duration(10.0));
+  listerner_.lookupTransform("odom", "map", ros::Time(0), odom_map_frame);
+  map_goal_frame.getOrigin().setValue(msg->pose.position.x,msg->pose.position.y,0);
+  map_goal_frame.setRotation(q);
+  odom_goal_frame  = odom_map_frame*map_goal_frame;
+
+  aic_auto_dock::gui_way2Goal guiway_goal;
+  geometry_msgs::Pose goal_msg;
+  tf::poseTFToMsg(odom_goal_frame,goal_msg);
+    // goal_msg.position.x = odom_goal_frame.getOrigin().getX();
+    // goal_msg.position.y = odom_goal_frame.getOrigin().getY();
+    // goal_msg.orientation.x = odom_goal_frame.getRotation().getX();
+    // goal_msg.orientation.y = odom_goal_frame.getRotation().getY();
+    // goal_msg.orientation.z = odom_goal_frame.getRotation().getZ();
+    // goal_msg.orientation.w = odom_goal_frame.getRotation().getW();
+  //aic_auto_dock::gui_way2Goal::BACK;
+  //aic_auto_dock::gui_way2Goal::STRAIGHT;
+  guiway_goal.type = aic_auto_dock::gui_way2Goal::STRAIGHT;
+  guiway_goal.pose = goal_msg;
+
+  guiway_goal.vel_line = 6;
+  guiway_goal.vel_angle = 1;
+  guiway_goal.back_dist = 0.1;//fabs(half_length_);
+  guiway_goal.obstacle_dist = 0.5;//fabs(half_length_);
+  guiway_goal.preparePosition = 2;
+  simple_goal_client_->waitForServer();
+  ROS_INFO("wait server succeed");
+
+  simple_goal_client_->sendGoal(guiway_goal);
 }
 
 int main(int argc, char** argv)
