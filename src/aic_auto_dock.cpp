@@ -8,13 +8,15 @@ autodock_interface::autodock_interface(ros::NodeHandle& nh, ros::NodeHandle& nh_
       elevator_extra_(new ElevatorExtra(nh, nh_local)),
       line_extractor_(new line_extraction::LineExtractionROS(nh, nh_local)),
       client_move_avoid_(new Client_move_avoid("aic_move_avoid", true)), VShapeData_(new autodock_data),
-      ParallelLineData_(new autodock_data), ElevatorData_(new autodock_data)
+      ParallelLineData_(new autodock_data), ElevatorData_(new autodock_data),
+      /*7_add*/ client_auto_dock_(new client_auto_dock(nh,"aic_auto_dock",true))
 {
-  client_gui_way_->waitForServer();
-  ROS_INFO("dock interface actionlib client: link gui_way successful!");
+  //7_debug
+  // client_gui_way_->waitForServer();
+  // ROS_INFO("dock interface actionlib client: link gui_way successful!");
 
-  client_move_avoid_->waitForServer();
-  ROS_INFO("dock interface actionlib client: link move_avoid successful!");
+  // client_move_avoid_->waitForServer();
+  // ROS_INFO("dock interface actionlib client: link move_avoid successful!");
 
   initparam();
 
@@ -29,7 +31,12 @@ autodock_interface::autodock_interface(ros::NodeHandle& nh, ros::NodeHandle& nh_
 
   gui_way_thread_ = new boost::thread(boost::bind(&autodock_interface::GuiWayThread, this));
   move_avoid_thread_ = new boost::thread(boost::bind(&autodock_interface::MoveAvoidThread, this));
-
+  //7_add
+  auto_dock_thread_ = new boost::thread(boost::bind(&autodock_interface::AutoDockThread, this));
+  odom_sub_ = nh_.subscribe("/odom", 1, &autodock_interface::odomCallback, this);
+  ROS_WARN("aic auto dock wait move_base_simple/goal...");
+  simple_goal_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &autodock_interface::CB_simple_goal,this);
+  //end
   server_->start();
   ROS_INFO("dock interface actionlib: Init successful!");
 }
@@ -1806,4 +1813,95 @@ bool autodock_interface::goalAccept()
       return false;
   }
   return true;
+}
+
+//7_add 
+void autodock_interface::CB_simple_goal(const geometry_msgs::PoseStampedConstPtr& msg)
+{
+  tf::Vector3 goal_pos;
+  tf::StampedTransform odom_map_frame;
+  tf::Transform odom_goal_frame;
+  tf::Transform map_goal_frame;
+  tf::Quaternion q;
+  q.setRPY(0,0,tf::getYaw(msg.get()->pose.orientation));
+  listerner_.waitForTransform("odom", "map", ros::Time(0), ros::Duration(10.0));
+  listerner_.lookupTransform("odom", "map", ros::Time(0), odom_map_frame);
+  map_goal_frame.getOrigin().setValue(msg->pose.position.x,msg->pose.position.y,0);
+  map_goal_frame.setRotation(q);
+  nav_position_  = odom_map_frame*map_goal_frame;
+  run_auto_dock_Thread_ = true;
+  auto_dock_cond_.notify_one();
+  ROS_WARN("aic auto dock accept move_base_simple/goal.");
+  // aic_auto_dock::gui_way2Goal guiway_goal;
+  // geometry_msgs::Pose goal_msg;
+  // tf::poseTFToMsg(odom_goal_frame,goal_msg);
+  // //aic_auto_dock::gui_way2Goal::BACK;
+  // //aic_auto_dock::gui_way2Goal::STRAIGHT;
+  // guiway_goal.type = aic_auto_dock::gui_way2Goal::STRAIGHT;
+  // guiway_goal.pose = goal_msg;
+
+  // guiway_goal.vel_line = 6;
+  // guiway_goal.vel_angle = 1;
+  // guiway_goal.back_dist = 0.1;//fabs(half_length_);
+  // guiway_goal.obstacle_dist = 0.5;//fabs(half_length_);
+  // guiway_goal.preparePosition = 2;
+  // simple_goal_client_->waitForServer();
+  // ROS_INFO("wait server succeed");
+
+  // simple_goal_client_->sendGoal(guiway_goal);
+}
+
+void autodock_interface::AutoDockThread()
+{
+  ros::NodeHandle n;
+  boost::unique_lock< boost::recursive_mutex > lock(auto_dock_mutex_);
+  ros::Rate rate(25);
+  double beginTime = ros::Time::now().toSec();
+  double leftTime;
+
+  while (n.ok())
+  {
+    while (!run_auto_dock_Thread_)
+    {
+      // if we should not be running the planner then suspend this thread
+      ROS_INFO("auto dock thread, thread is suspending");
+      auto_dock_cond_.wait(lock);
+
+      beginTime = ros::Time::now().toSec();
+    }
+    lock.unlock();
+
+    double dis = hypot(nav_position_.getOrigin().getX()- realTime_odom_.getOrigin().getX(),nav_position_.getOrigin().getY()- realTime_odom_.getOrigin().getY());
+    if(dis<1.5)
+    {
+      client_auto_dock_->waitForServer();
+      ROS_INFO("dock interface actionlib client: link auto dock successful!");
+      aic_msgs::AutoDock2Goal goal;
+      goal.tag_no = "0";
+      goal.type   = 0;//ENTER;
+      goal.board_shape = 2;//PARALLEL_SHAPE;
+      goal.dock_direction  = 1;//FRONTWARD;
+      client_auto_dock_->sendGoal(goal);
+      run_auto_dock_Thread_ = false;
+    }
+
+    /***
+     * timeout
+     ***/
+    if (ros::Time::now().toSec() - beginTime > AutoDockTimeout_ && AutoDockTimeout_ > 0)
+    {
+      ROS_WARN("auto dock thread, dock interface auto dock timeout");
+      run_auto_dock_Thread_ = false;
+    }
+    lock.lock();
+  }
+}
+
+void autodock_interface::odomCallback(const nav_msgs::OdometryConstPtr& msg)
+{
+  tf::Quaternion q;
+  tf::quaternionMsgToTF(msg->pose.pose.orientation, q);
+  tf::Vector3 vec(msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z);
+  realTime_odom_.setOrigin(vec);
+  realTime_odom_.setRotation(q);
 }

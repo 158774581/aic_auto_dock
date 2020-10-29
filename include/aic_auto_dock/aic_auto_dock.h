@@ -2,6 +2,7 @@
 #define AUTODOCK_INTERFACE_H
 
 #include "actionlib/server/simple_action_server.h"
+
 #include "aic_auto_dock/gui_way2Action.h"
 #include "aic_auto_dock/math/footprint.h"
 #include "aic_auto_dock/math/pnpoly.hpp"
@@ -20,6 +21,7 @@
 using namespace std;
 
 typedef actionlib::SimpleActionServer< aic_msgs::AutoDock2Action > Server;
+typedef actionlib::SimpleActionClient< aic_msgs::AutoDock2Action > client_auto_dock;
 typedef actionlib::SimpleActionClient< aic_auto_dock::gui_way2Action > Client_gui_way;
 typedef actionlib::SimpleActionClient< aic_msgs::OdomCtrolAvoidObstacleAction > Client_move_avoid;
 
@@ -80,7 +82,11 @@ private:
   void LaserCallback(const sensor_msgs::LaserScan& msg);
   bool goalAccept();
   void pubMarkerCarStraightSquare();
-
+  //7_add
+  void CB_simple_goal(const geometry_msgs::PoseStampedConstPtr& msg);
+  void AutoDockThread();
+  void odomCallback(const nav_msgs::OdometryConstPtr& msg);
+  //end
   /**** ros param ****/
   ros::NodeHandle nh_, nh_local_;
   ros::Publisher status_code_pub_, twist_pub_, marker_pub_;
@@ -131,6 +137,17 @@ private:
   double guiway_vel_line_, guiway_vel_angle_, guiway_vel_last_line_, guiway_vel_last_angle_;
   double preparePosition_, delta_backDist_, stop_recognizeDist_, obstacle_dist_, getout_vel_, scale_, rate_, average_times_;
   double recognize_deltaX_, recognize_deltaY_;
+
+    //7_add
+  tf::Transform nav_position_,realTime_odom_;//in odom frame
+  boost::thread *auto_dock_thread_;
+  boost::recursive_mutex auto_dock_mutex_;
+  boost::condition_variable_any auto_dock_cond_;
+  bool run_auto_dock_Thread_ = false;
+  double AutoDockTimeout_ = 10;
+  ros::Subscriber odom_sub_;
+  client_auto_dock* client_auto_dock_;
+  ros::Subscriber simple_goal_sub_;
 };
 
 
