@@ -93,6 +93,7 @@ autodock_interface::~autodock_interface()
 bool autodock_interface::initparam()
 {
   nh_local_.param< string >("scan_frame", scan_frame_, "laser_link");
+  nh_local_.param< double >("begin_dock_dis", begin_dock_dis_, 1.5);
 
   /***/
   try
@@ -777,6 +778,7 @@ bool autodock_interface::guiwayMotionWithParallelCalibration(aic_auto_dock::gui_
   geometry_msgs::Pose temp_pose = goal.pose, pose;
   //7_add
   goal.port_length = 1.0;
+  goal.port_width = -1.0;
   actionlib_msgs::GoalID  cancle_goal;
   move_base_cancle_pub_.publish(cancle_goal);
   ROS_INFO("cancle move_base/goal");
@@ -1885,7 +1887,7 @@ void autodock_interface::AutoDockThread()
     lock.unlock();
 
     double dis = hypot(nav_position_.getOrigin().getX()- realTime_odom_.getOrigin().getX(),nav_position_.getOrigin().getY()- realTime_odom_.getOrigin().getY());
-    if(dis<1.5)
+    if(dis<begin_dock_dis_)
     {
       client_auto_dock_->waitForServer();
       ROS_INFO("dock interface actionlib client: link auto dock successful!");

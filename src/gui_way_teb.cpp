@@ -70,7 +70,7 @@ gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
   half_width_ = half_width;
   if(port_width_<0)
   {
-    port_width_ = half_width_+0.2;
+    port_width_ = half_width_+0.1;
   }
   //teb
   simple_goal_sub_ = nh.subscribe("/move_base_simple/goal1", 1, &gui_way::CB_simple_goal,this);
@@ -102,7 +102,10 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
   tf::poseMsgToTF(req->pose, odom_port_frame_);
   port_length_ = req->port_length;
   //debug
-  //port_width_ = req->port_width;
+  if(req->port_width>0)
+  {
+    port_width_ = req->port_width;
+  }
   /*** 方向 ***/
   if (req->type == aic_auto_dock::gui_way2Goal::STRAIGHT)
   {

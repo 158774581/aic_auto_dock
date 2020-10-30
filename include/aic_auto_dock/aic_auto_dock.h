@@ -149,6 +149,7 @@ private:
   client_auto_dock* client_auto_dock_;
   ros::Subscriber simple_goal_sub_;
   ros::Publisher  move_base_cancle_pub_;
+  double begin_dock_dis_;
 };
 
 
