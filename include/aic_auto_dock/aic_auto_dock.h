@@ -148,6 +148,7 @@ private:
   ros::Subscriber odom_sub_;
   client_auto_dock* client_auto_dock_;
   ros::Subscriber simple_goal_sub_;
+  ros::Publisher  move_base_cancle_pub_;
 };
 
 

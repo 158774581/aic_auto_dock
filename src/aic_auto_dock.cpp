@@ -35,6 +35,7 @@ autodock_interface::autodock_interface(ros::NodeHandle& nh, ros::NodeHandle& nh_
   odom_sub_ = nh_.subscribe("/odom", 1, &autodock_interface::odomCallback, this);
   ROS_WARN("aic auto dock wait move_base_simple/goal...");
   simple_goal_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &autodock_interface::CB_simple_goal,this);
+  move_base_cancle_pub_ =  nh_.advertise<actionlib_msgs::GoalID>("move_base/cancel",1);
   //end
   server_->start();
   ROS_INFO("dock interface actionlib: Init successful!");
@@ -776,6 +777,9 @@ bool autodock_interface::guiwayMotionWithParallelCalibration(aic_auto_dock::gui_
   geometry_msgs::Pose temp_pose = goal.pose, pose;
   //7_add
   goal.port_length = 1.0;
+  actionlib_msgs::GoalID  cancle_goal;
+  move_base_cancle_pub_.publish(cancle_goal);
+  ROS_INFO("cancle move_base/goal");
   //goal.port_width = (parallel_line_extra_->lines_min_gap_+parallel_line_extra_->lines_max_gap_)/2.0;
   goal.scale = scale_;
   client_gui_way_->sendGoal(goal, boost::bind(&autodock_interface::getGuiWayCallback, this, _1, _2),
