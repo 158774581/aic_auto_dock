@@ -100,6 +100,9 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
   tf::Quaternion q;
   /*** 初始化目标点 ***/
   tf::poseMsgToTF(req->pose, odom_port_frame_);
+  port_length_ = req->port_length;
+  //debug
+  //port_width_ = req->port_width;
   /*** 方向 ***/
   if (req->type == aic_auto_dock::gui_way2Goal::STRAIGHT)
   {

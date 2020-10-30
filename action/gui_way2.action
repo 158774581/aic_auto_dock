@@ -7,6 +7,8 @@ float32             back_dist
 float32             obstacle_dist
 float32             preparePosition
 float32             scale            #角速度响应比例，取值范围：0~0.1
+float32             port_length
+float32             port_width
 
 int32               BACK = 0
 int32               STRAIGHT = 1

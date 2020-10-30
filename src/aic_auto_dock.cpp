@@ -11,12 +11,11 @@ autodock_interface::autodock_interface(ros::NodeHandle& nh, ros::NodeHandle& nh_
       ParallelLineData_(new autodock_data), ElevatorData_(new autodock_data),
       /*7_add*/ client_auto_dock_(new client_auto_dock(nh,"aic_auto_dock",true))
 {
-  //7_debug
-  // client_gui_way_->waitForServer();
-  // ROS_INFO("dock interface actionlib client: link gui_way successful!");
+  client_gui_way_->waitForServer();
+  ROS_INFO("dock interface actionlib client: link gui_way successful!");
 
-  // client_move_avoid_->waitForServer();
-  // ROS_INFO("dock interface actionlib client: link move_avoid successful!");
+  client_move_avoid_->waitForServer();
+  ROS_INFO("dock interface actionlib client: link move_avoid successful!");
 
   initparam();
 
@@ -515,8 +514,16 @@ bool autodock_interface::recognize(const docking_direction& moving, geometry_msg
       {
         tf::Transform pose_frame;
         tf::poseMsgToTF(pose_far, pose_frame);
-        vec_precise_pose_far.push_back(pose_frame);
-        pose_temp = pose_far;
+        //7_add
+        tf::Transform nav_port_frame = (nav_position_.inverse())*pose_frame;
+        if(fabs(nav_port_frame.getOrigin().getY())<0.5&&nav_port_frame.getOrigin().getX()>0.0)//port位置合理
+        {
+          vec_precise_pose_far.push_back(pose_frame);
+          pose_temp = pose_far;
+        }
+        //7_del
+        //vec_precise_pose_far.push_back(pose_frame);
+        //pose_temp = pose_far;
 
         if (moving == docking_direction::still && vec_precise_pose_far.size() >= 5)
         {
@@ -767,7 +774,9 @@ bool autodock_interface::guiwayMotionWithParallelCalibration(aic_auto_dock::gui_
 
   vector< tf::Transform > vec_precise_pose_temp;
   geometry_msgs::Pose temp_pose = goal.pose, pose;
-
+  //7_add
+  goal.port_length = 1.0;
+  //goal.port_width = (parallel_line_extra_->lines_min_gap_+parallel_line_extra_->lines_max_gap_)/2.0;
   goal.scale = scale_;
   client_gui_way_->sendGoal(goal, boost::bind(&autodock_interface::getGuiWayCallback, this, _1, _2),
                             Client_gui_way::SimpleActiveCallback(),
