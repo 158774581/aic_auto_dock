@@ -779,15 +779,18 @@ bool autodock_interface::guiwayMotionWithParallelCalibration(aic_auto_dock::gui_
   //7_add
   goal.port_length = 1.0;
   goal.port_width = -1.0;
-  actionlib_msgs::GoalID  cancle_goal;
-  move_base_cancle_pub_.publish(cancle_goal);
-  ROS_INFO("cancle move_base/goal");
   //goal.port_width = (parallel_line_extra_->lines_min_gap_+parallel_line_extra_->lines_max_gap_)/2.0;
+  //end
   goal.scale = scale_;
   client_gui_way_->sendGoal(goal, boost::bind(&autodock_interface::getGuiWayCallback, this, _1, _2),
                             Client_gui_way::SimpleActiveCallback(),
                             boost::bind(&autodock_interface::gui_way_feedbackCB, this, _1));
   ros::Duration(0.1).sleep();
+  //7_add
+  actionlib_msgs::GoalID  cancle_goal;
+  move_base_cancle_pub_.publish(cancle_goal);
+  ROS_INFO("cancle move_base/goal");
+  //end
   boost::unique_lock< boost::recursive_mutex > lock(gui_way_mutex_);
   run_gui_way_Thread_ = true;
   gui_way_cond_.notify_one();
