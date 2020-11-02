@@ -51,8 +51,9 @@
  # Obstacles
     
  min_obstacle_dist: 0.04 # This value must also include our robot radius, since footprint_model is set to "point".
- inflation_dist: 0.04
+ inflation_dist: 0.00
  #include_costmap_obstacles: True
+ legacy_obstacle_association: true
  #costmap_obstacles_behind_robot_dist: 1.5
  obstacle_poses_affected: 3
 
@@ -76,7 +77,7 @@
  weight_acc_lim_x: 1
  weight_acc_lim_theta: 1
  weight_kinematics_nh: 500
- weight_kinematics_forward_drive: 10
+ weight_kinematics_forward_drive: 100
  weight_kinematics_turning_radius: 0
  weight_optimaltime: 1 # must be > 0
  weight_shortest_path: 0

@@ -8,7 +8,7 @@
 
 gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
     : nh_(nh), local_nh_(local_nh), as_(new Server(local_nh, "gui_way", boost::bind(&gui_way::start, this, _1), false)),
-    simple_goal_client_(new Client_gui_way("aic_auto_dock_guiway/gui_way", true))
+    planner_(new teb_planner(local_nh)),simple_goal_client_(new Client_gui_way("aic_auto_dock_guiway/gui_way", true))
 {
     /***
    * init launch param
@@ -26,7 +26,7 @@ gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
   local_nh_.param< double >("prepare_scale", prepare_scale_, 0.05);
   local_nh_.param< double >("angleVel_turn", angleVel_turn_, 0.3);
   local_nh_.param< double >("port_length", port_length_, 1);
-  local_nh_.param< double >("port_width", port_width_, -1);//
+  local_nh_.param< double >("port_width", port_width_, 0.45);//
   local_nh_.param< std::string >("laser_frame_name", laser_frame_name_, "laser_link");
   loadParamFromYaml();
   as_->start();
@@ -42,21 +42,17 @@ gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
 
   vector< geometry_msgs::Point > points = makeFootprintFromParams(nh);
   points_ = points;
-    //debug
+  //debug
   // geometry_msgs::Point debug_p;
-  // debug_p.x = 0.25;debug_p.y = 0.25;  points_.push_back(debug_p);
-  // debug_p.x = -0.25;debug_p.y = 0.25;  points_.push_back(debug_p);
-  // debug_p.x = -0.25;debug_p.y = -0.25;  points_.push_back(debug_p);
-  // debug_p.x = 0.25;debug_p.y = -0.25;  points_.push_back(debug_p);
+  // debug_p.x = 0.3;debug_p.y = 0.25;  points_.push_back(debug_p);
+  // debug_p.x = -0.3;debug_p.y = 0.25;  points_.push_back(debug_p);
+  // debug_p.x = -0.3;debug_p.y = -0.25;  points_.push_back(debug_p);
+  // debug_p.x = 0.3;debug_p.y = -0.25;  points_.push_back(debug_p);
+  // points = points_;
   //end debug
   if(points_.size() >0)
   {
-    planner_ = new teb_planner(local_nh,points_);
     accept_robotInfo_ = true;
-  }
-  else
-  {
-    planner_ = new teb_planner(local_nh);
   }
   double half_length = 0, half_width = 0;
   for (vector< geometry_msgs::Point >::iterator cit = points.begin(); cit != points.end(); cit++)
@@ -68,10 +64,6 @@ gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
   }
   half_length_ = half_length;
   half_width_ = half_width;
-  if(port_width_<0)
-  {
-    port_width_ = half_width_+0.1;
-  }
   //teb
   simple_goal_sub_ = nh.subscribe("/move_base_simple/goal1", 1, &gui_way::CB_simple_goal,this);
   //ros::Timer publish_timer = nh.createTimer(ros::Duration(0.1), \
@@ -951,6 +943,8 @@ void gui_way::CB_simple_goal(const geometry_msgs::PoseStampedConstPtr& msg)
   guiway_goal.back_dist = 0.1;//fabs(half_length_);
   guiway_goal.obstacle_dist = 0.5;//fabs(half_length_);
   guiway_goal.preparePosition = 2;
+  guiway_goal.port_length = 1;
+  guiway_goal.port_width = -1;
   simple_goal_client_->waitForServer();
   ROS_INFO("wait server succeed");
 

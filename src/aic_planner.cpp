@@ -186,7 +186,7 @@ void teb_planner::interpolatePath(const tf::Transform& odom_tmp,\
       break;
     }
   }
-  setViaPoints(path);
+  //setViaPoints(path);
 }
 
 RobotFootprintModelPtr teb_planner::setRobotFootprintPolygon( vector< geometry_msgs::Point > points)
