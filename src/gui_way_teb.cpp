@@ -26,7 +26,7 @@ gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
   local_nh_.param< double >("prepare_scale", prepare_scale_, 0.05);
   local_nh_.param< double >("angleVel_turn", angleVel_turn_, 0.3);
   local_nh_.param< double >("port_length", port_length_, 1);
-  local_nh_.param< double >("port_width", port_width_, 0.5);//
+  local_nh_.param< double >("port_width", port_width_, 0.5);//0.5
   local_nh_.param< std::string >("laser_frame_name", laser_frame_name_, "laser_link");
   loadParamFromYaml();
   as_->start();
@@ -220,7 +220,7 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
     {
       goal_yaw = goal_yaw>0? goal_yaw-M_PI:goal_yaw+M_PI;
     }
-    if (x > preparePosition_)
+    if (x > preparePosition_||fabs(y)>port_width_)
     {
       via_p.pose.position.x = 0;  
       via_p.pose.position.y = 0;  

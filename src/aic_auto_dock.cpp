@@ -147,6 +147,17 @@ bool autodock_interface::initgoal(const aic_msgs::AutoDock2GoalConstPtr& goal)
 
   /*** init goal ***/
   interface.tag = goal->tag_no;
+  //7_add
+  tf::StampedTransform odom_map_frame;
+  tf::Transform map_goal_frame;
+  tf::Quaternion q;
+  q.setRPY(0,0,goal->targetPose.theta);
+  listerner_.waitForTransform("odom", "map", ros::Time(0), ros::Duration(10.0));
+  listerner_.lookupTransform("odom", "map", ros::Time(0), odom_map_frame);
+  map_goal_frame.getOrigin().setValue(goal->targetPose.x,goal->targetPose.y,0);
+  map_goal_frame.setRotation(q);
+  nav_position_  = odom_map_frame*map_goal_frame;
+  //end
   double detal_length;
   if (goal->board_shape == aic_msgs::AutoDock2Goal::VL_SHAPE)
   {
