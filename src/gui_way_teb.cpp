@@ -473,7 +473,7 @@ void gui_way::Laserhander(const sensor_msgs::LaserScan& msg)
   geometry_msgs::Point last_point;
   last_point.x = 1e6;
   last_point.y = 1e6;
-  U型的车库障碍物
+  //U型的车库障碍物
   double cfg_x = port_length_;
   double cfg_y = port_width_;
   //add obstacles
