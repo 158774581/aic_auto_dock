@@ -109,7 +109,7 @@ private:
 
   /*** global variable ***/
   tf::Transform realTime_odom_, port_foot_frame, prepare_foot_frame, prepareNav_foot_frame, odom_port_frame_,
-      target_foot_frame;
+    target_foot_frame;
   geometry_msgs::Twist realTime_twist_;
   double prepareNavAngle_, preparePositionNav;
   StepProcess process_;
