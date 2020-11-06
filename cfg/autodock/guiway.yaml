@@ -1,0 +1,15 @@
+guiway:
+  - no_tag: '0'
+    delta_detector_spacing: 0.001   #0.001
+    dangerRange_x: 0.2             #0.05
+    dangerRange_y: 0.1             #0.02
+    yawThrehold: 0.02               #0.02
+    radiusThrehold: 0.1             #0.1
+    detectorYCoordinate: 0.2        #0.1
+    aW_acc: 0.15                    #0.15
+    aW_dcc: 0.15                    #0.15
+    prepare_lineVel: 0.1            #0.1
+    prepare_angleVel: 0.3           #0.3
+    prepare_scale: 0.05             #0.05
+    angleVel_turn: 0.3              #0.3
+    avoid_timeout: 20.0             #20.0 

@@ -42,6 +42,24 @@ teb_planner::teb_planner(ros::NodeHandle& nh,vector< geometry_msgs::Point > foot
   
 }
 
+//------------ teb planner ----------------
+teb_planner::teb_planner(ros::NodeHandle& nh,geometry_msgs::Point& p1,geometry_msgs::Point& p2):nh_(nh)
+{
+  config_.loadRosParamFromNodeHandle(nh);
+  //ros::Timer publish_timer = n.createTimer(ros::Duration(0.1), CB_publishCycle);
+    // Setup visualization
+  visual_ = TebVisualizationPtr(new TebVisualization(nh, config_));
+
+  // Setup robot shape model
+  robot_model_ = setRobotFootprintLine(p1,p2);
+
+  // Setup planner (homotopy class planning or just the local teb planner)
+  if (config_.hcp.enable_homotopy_class_planning)
+    planner_ = PlannerInterfacePtr(new HomotopyClassPlanner(config_, &obst_vector_, robot_model_, visual_, &via_points_));
+  else
+    planner_ = PlannerInterfacePtr(new TebOptimalPlanner(config_, &obst_vector_, robot_model_, visual_, &via_points_));
+
+}
 
 bool teb_planner::getVelocityCommand(double& vx, double& vy, double& omega, int look_ahead_poses)
 {
@@ -58,6 +76,14 @@ bool teb_planner::getVelocityCommand(double& vx, double& vy, double& omega, int 
     {
         return true;
     }
+    else
+    {
+      ROS_WARN("isTrajFeasible = false");
+    }
+  }
+  else
+  {
+     ROS_WARN("getVelocityCommand = false");
   }
   return false;
 }
@@ -120,7 +146,7 @@ bool teb_planner::isTrajFeasible()
         double obs_dis = robot_model_->calculateDistance(predict_pose,obst.get());
         if(obs_dis < config_.obstacles.min_obstacle_dist)
         {
-          ROS_INFO_ONCE("robot is too close to obstacles,distance %f %f!!!",config_.obstacles.min_obstacle_dist,obs_dis);
+          ROS_INFO("robot is too close to obstacles,distance %f %f!!!",config_.obstacles.min_obstacle_dist,obs_dis);
           return false;
         }
       }
@@ -200,4 +226,9 @@ RobotFootprintModelPtr teb_planner::setRobotFootprintPolygon( vector< geometry_m
     polygon.push_back(pt);
   }
   return boost::make_shared<PolygonRobotFootprint>(polygon);
+}
+
+RobotFootprintModelPtr teb_planner::setRobotFootprintLine(geometry_msgs::Point& p1,geometry_msgs::Point& p2)
+{
+  return boost::make_shared<LineRobotFootprint>(p1,p2);
 }

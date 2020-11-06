@@ -1,0 +1,77 @@
+v_shape_param:
+  - no_tag: '0'
+    featureMatchingTimeout: 10.0        #识别超时时间，0为无限等待
+    stepControlTimeout: 100.0           #运动控制超时时间，0为无限等待
+    guiway_vel_line: 0.1                #调整位置的gui way控制的线速度
+    guiway_vel_angle: 0.3               #调整位置的gui way控制的角速度
+    preparePosition: 0.5                #准备位置与特征点的距离
+    delta_backDist: 0.02                #到达时，小车与特征板的距离
+    stop_recognizeDist: 0.3             #车头或者车尾与特征板的间距满足此参数时，不再做识别
+    obstacle_dist: 0.2                  #关闭避障检测时，小车与特征板的距离
+    getout_vel: 0.15                    #退出货架时的速度m/s
+    scale: 0.015                        #运动控制比例
+    rate: 15.0                          #频率
+    average_times: 15.0                 #识别平均次数
+    charging_port_delta_y: -0.065       #调参人员站立方向与充电口同向朝外，小车偏向左边（右移）就调大数据，反之调小
+    charging_port_delta_angle: 0.0      #调参人员站立方向与充电口同向朝外，小车往顺时针方向偏移（逆时针转动）就调大数据，反之调小
+
+parallel_lines_param:
+  - no_tag: '0'
+    featureMatchingTimeout: 10.0        #识别超时时间，0为无限等待
+    stepControlTimeout: 100.0           #运动控制超时时间，0为无限等待
+    guiway_vel_line: 0.8                #调整位置的gui way控制的线速度
+    guiway_vel_angle: 0.3               #调整位置的gui way控制的角速度
+    preparePosition: 1.5                #准备位置与特征点的距离
+    delta_backDist: 0.0                 #到达时，小车与终点的距离
+    stop_recognizeDist: 0.3             #车头或者车尾与特征板的间距满足此参数时，不再做识别
+    obstacle_dist: 1.4            #关闭避障检测时，小车与特征板的距离
+    getout_vel: 0.15                    #退出货架时的速度m/s
+    scale: 0.015                        #运动控制比例
+    rate: 15.0                          #频率
+    average_times: 3.0                  #识别平均次数
+    recognize_deltaX: 2.0                 #
+    recognize_deltaY: 2.0                 #
+    charging_port_delta_y: 0.0          #调参人员站立方向与货架平行，朝向小车对接点，小车偏向左边（右移）就调大数据，反之调小
+    charging_port_delta_angle: 0.0      #调参人员站立方向与货架平行，朝向小车对接点，小车往顺时针方向偏移（逆时针转动）就调大数据，反之调小
+    max_line_angle: 0.087               #两边特征板最大允许的角度
+    min_line_angle: -0.087              #两边特征板最小允许的角度
+    max_boards_gap: 0.9                #两边特征板最大允许的间距
+    min_boards_gap: 0.7                #两边特征板最小允许的间距
+    charging_port: -0.8                 #特征板起始点与小车到达后车头的垂直距离
+    maxmunLength: 0.81                   #特征板长度
+    minimunLength: 0.61                  #特征板长度
+    minimunLine: 0.2                    #直线提取后，直线的最短合法长度
+elevator_param:
+  - no_tag: '0'
+    featureMatchingTimeout: 20.0        #识别超时时间，0为无限等待
+    stepControlTimeout: 100.0           #运动控制超时时间，0为无限等待
+    guiway_vel_line: 0.1                #调整位置的gui way控制的线速度
+    guiway_vel_angle: 0.3               #调整位置的gui way控制的角速度
+    preparePosition: 2.2                #准备位置与特征点的距离
+    delta_backDist: 0.0                 #到达时，小车与终点的距离
+    stop_recognizeDist: 0.3             #车头或者车尾与特征板的间距满足此参数时，不再做识别
+    obstacle_dist: -100.0               #关闭避障检测时，小车与特征板的距离
+    getout_vel: 0.15                    #退出货架时的速度m/s
+    scale: 0.015                        #运动控制比例
+    rate: 15.0                          #频率
+    average_times: 3.0                  #识别平均次数
+    charging_port_delta_y: 0.0          #调参人员站立方向与货架平行，朝向小车对接点，小车偏向左边（右移）就调大数据，反之调小
+    charging_port_delta_angle: 0.0      #调参人员站立方向与货架平行，朝向小车对接点，小车往顺时针方向偏移（逆时针转动）就调大数据，反之调小
+    max_line_angle: 0.087               #两边特征板最大允许的角度
+    min_line_angle: -0.087              #两边特征板最小允许的角度
+    max_boards_gap: 0.8                #两边特征板最大允许的间距
+    min_boards_gap: 0.6                #两边特征板最小允许的间距
+    charging_port: -1.4                 #特征板起始点与小车到达后车头的垂直距离
+    maxmunLength: 0.4                   #特征板长度
+    minimunLength: 0.1                  #特征板长度
+    max_split_lines: 0.1
+    room_max_gap: 1.2
+    room_min_gap: 1.0
+    room_max_line_length: 1.6
+    room_min_line_length: 0.2
+    room_delta_y: 0.0
+    corner_max_angle: 1.66
+    corner_min_angle: 1.48
+    elevator_depth: 1.80
+    wall_min_length: 0.4
+    wall_max_length: 2.0

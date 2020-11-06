@@ -8,7 +8,7 @@
 
 gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
     : nh_(nh), local_nh_(local_nh), as_(new Server(local_nh, "gui_way", boost::bind(&gui_way::start, this, _1), false)),
-    planner_(new teb_planner(local_nh)),simple_goal_client_(new Client_gui_way("aic_auto_dock_guiway/gui_way", true))
+    simple_goal_client_(new Client_gui_way("aic_auto_dock_guiway/gui_way", true))
 {
     /***
    * init launch param
@@ -50,10 +50,6 @@ gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
   // debug_p.x = 0.3;debug_p.y = -0.25;  points_.push_back(debug_p);
   // points = points_;
   //end debug
-  if(points_.size() >0)
-  {
-    accept_robotInfo_ = true;
-  }
   double half_length = 0, half_width = 0;
   for (vector< geometry_msgs::Point >::iterator cit = points.begin(); cit != points.end(); cit++)
   {
@@ -64,6 +60,21 @@ gui_way::gui_way(ros::NodeHandle& nh, ros::NodeHandle& local_nh)
   }
   half_length_ = half_length;
   half_width_ = half_width;
+
+  geometry_msgs::Point p1,p2;
+  p1.x = -half_length;
+  p2.x = half_length;
+  p1.y = 0;
+  p2.y = 0;
+  if(points_.size() >0)
+  {
+    planner_ =new teb_planner(local_nh,p1,p2);
+    accept_robotInfo_ = true;
+  }
+  else
+  {
+    planner_ =new teb_planner(local_nh);
+  }
   //teb
   simple_goal_sub_ = nh.subscribe("/move_base_simple/goal1", 1, &gui_way::CB_simple_goal,this);
   //ros::Timer publish_timer = nh.createTimer(ros::Duration(0.1), \
@@ -474,23 +485,23 @@ void gui_way::Laserhander(const sensor_msgs::LaserScan& msg)
   last_point.x = 1e6;
   last_point.y = 1e6;
   //U型的车库障碍物
-  double cfg_x = port_length_;
-  double cfg_y = port_width_;
-  //add obstacles
-  q.setRPY(0,0,0);
-  tf::Transform goal_obs_frame(q,tf::Vector3(cfg_x,-cfg_y,0));
-  tf::Transform goal_obs1_frame(q,tf::Vector3(-cfg_x,-cfg_y,0));
-  tf::Transform odom_obs_frame = odom_port_frame_*goal_obs_frame;
-  tf::Transform odom_obs1_frame = odom_port_frame_*goal_obs1_frame;
-  planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
-                            odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
+//  double cfg_x = port_length_;
+//  double cfg_y = port_width_;
+//  //add obstacles
+//  q.setRPY(0,0,0);
+//  tf::Transform goal_obs_frame(q,tf::Vector3(cfg_x,-cfg_y,0));
+//  tf::Transform goal_obs1_frame(q,tf::Vector3(-cfg_x,-cfg_y,0));
+//  tf::Transform odom_obs_frame = odom_port_frame_*goal_obs_frame;
+//  tf::Transform odom_obs1_frame = odom_port_frame_*goal_obs1_frame;
+//  planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
+//                            odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
 
-  goal_obs_frame.setOrigin(tf::Vector3(-cfg_x,cfg_y,0));
-  goal_obs1_frame.setOrigin(tf::Vector3(cfg_x,cfg_y,0));
-  odom_obs_frame = odom_port_frame_*goal_obs_frame;
-  odom_obs1_frame = odom_port_frame_*goal_obs1_frame;
-  planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
-                            odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
+//  goal_obs_frame.setOrigin(tf::Vector3(-cfg_x,cfg_y,0));
+//  goal_obs1_frame.setOrigin(tf::Vector3(cfg_x,cfg_y,0));
+//  odom_obs_frame = odom_port_frame_*goal_obs_frame;
+//  odom_obs1_frame = odom_port_frame_*goal_obs1_frame;
+//  planner_->setLineObstacle(odom_obs_frame.getOrigin().getX(), odom_obs_frame.getOrigin().getY(),\
+//                            odom_obs1_frame.getOrigin().getX(), odom_obs1_frame.getOrigin().getY());
 
   if (accept_robotInfo_)
   {
@@ -509,16 +520,16 @@ void gui_way::Laserhander(const sensor_msgs::LaserScan& msg)
       tf::Transform foot_pt_frame = foot_laser_frame_ * laser_pt_frame;
       tf::Transform odom_pt_frame = realTime_odom_*foot_pt_frame;
       //将距离小于1.5m的障碍物添加到TEB规划避障中
-    //  double cfg_dis = planner_->getTebConfig().trajectory.max_global_plan_lookahead_dist;
-    //  double cfg_gap = 0.1;
-    //  if (hypot(foot_pt_frame.getOrigin().getX(),foot_pt_frame.getOrigin().getY())<cfg_dis&&\
-    //      dist_laser > msg.range_min && dist_laser < msg.range_max&&\
-    //      hypot(last_point.x -x,last_point.y-y)>cfg_gap)
-    //  {
-    //    planner_->setPointObstacle(odom_pt_frame.getOrigin().getX(),odom_pt_frame.getOrigin().getY());
-    //    last_point.x = x;
-    //    last_point.y = y;
-    //  }
+      double cfg_dis = planner_->getTebConfig().trajectory.max_global_plan_lookahead_dist;
+      double cfg_gap = 0.1;
+      if (hypot(foot_pt_frame.getOrigin().getX(),foot_pt_frame.getOrigin().getY())<cfg_dis&&\
+          dist_laser > msg.range_min && dist_laser < msg.range_max&&\
+          hypot(last_point.x -x,last_point.y-y)>cfg_gap)
+      {
+        planner_->setPointObstacle(odom_pt_frame.getOrigin().getX(),odom_pt_frame.getOrigin().getY());
+        last_point.x = x;
+        last_point.y = y;
+      }
 
       if (avoidType_ == AvoidType::ROUND)
       {
