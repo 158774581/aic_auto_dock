@@ -476,7 +476,16 @@ bool autodock_interface::recognizeLogic(geometry_msgs::Pose& precise_pose, bool 
   bool recognizeMark = false;
   for (int i = 0; i < 2; i++)
   {
-    docking_direction moving = docking_direction::rotate;
+    docking_direction moving;
+    if(nav_cmd_while_recognize_== true )
+    {
+      moving = docking_direction::still;
+    }
+    else
+    {
+      moving = docking_direction::rotate;
+    }
+ 
     extra_pt_->setRoughRecgonizeMark(rough_mark);
     if (!recognize(moving, precise_pose))
     {
@@ -529,7 +538,7 @@ bool autodock_interface::recognize(const docking_direction& moving, geometry_msg
         tf::poseMsgToTF(pose_far, pose_frame);
         //7_add
         tf::Transform nav_port_frame = (nav_position_.inverse())*pose_frame;
-        if(fabs(nav_port_frame.getOrigin().getY())<0.5&&nav_port_frame.getOrigin().getX()>0.0)//port位置合理
+        if(fabs(nav_port_frame.getOrigin().getY())<0.2&&nav_port_frame.getOrigin().getX()>0.0)//port位置合理
         {
           vec_precise_pose_far.push_back(pose_frame);
           pose_temp = pose_far;
@@ -1859,6 +1868,7 @@ void autodock_interface::CB_simple_goal(const geometry_msgs::PoseStampedConstPtr
   map_goal_frame.setRotation(q);
   nav_position_  = odom_map_frame*map_goal_frame;
   run_auto_dock_Thread_ = true;
+  nav_cmd_while_recognize_ = true;
   auto_dock_cond_.notify_one();
   ROS_WARN("aic auto dock accept move_base_simple/goal.");
   // aic_auto_dock::gui_way2Goal guiway_goal;

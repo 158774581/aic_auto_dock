@@ -144,6 +144,7 @@ private:
   boost::recursive_mutex auto_dock_mutex_;
   boost::condition_variable_any auto_dock_cond_;
   bool run_auto_dock_Thread_ = false;
+  bool nav_cmd_while_recognize_ = false;
   double AutoDockTimeout_ = 10;
   ros::Subscriber odom_sub_;
   client_auto_dock* client_auto_dock_;
