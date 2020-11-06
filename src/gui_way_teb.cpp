@@ -367,7 +367,7 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
     aic_auto_dock::gui_way2Feedback feedback;
     feedback.status = aic_auto_dock::gui_way2Feedback::EXECUTING;
     feedback.feedback = aic_auto_dock::gui_way2Feedback::STEP_PROCESS;
-    feedback.remaining_distance = port_foot_frame.getOrigin().getX();
+    feedback.remaining_distance = target_foot_frame.getOrigin().getX();
     //7_warnning
     // if (process_.prepareNavStepProcessing)
     //   feedback.step_process = aic_auto_dock::gui_way2Feedback::PREPARE_NAV_STEP;
@@ -419,7 +419,7 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
   {
     aic_auto_dock::gui_way2Result result;
     result.result = aic_auto_dock::gui_way2Result::FAILED;
-    result.remaining_distance = port_foot_frame.getOrigin().x();
+    result.remaining_distance = target_foot_frame.getOrigin().x();
     as_->setAborted(result);
     ROS_INFO("gui_way: Motion fail");
     laser_sub_.shutdown();
@@ -433,7 +433,7 @@ void gui_way::start(const aic_auto_dock::gui_way2GoalConstPtr& req)
   else
   {
     aic_auto_dock::gui_way2Result result;
-    result.remaining_distance = port_foot_frame.getOrigin().x();
+    result.remaining_distance = target_foot_frame.getOrigin().x();
     as_->setAborted(result);
     ROS_INFO("gui_way: Motion known");
     laser_sub_.shutdown();
@@ -639,7 +639,7 @@ bool gui_way::goalAccept()
       twist_pub_.publish(twist);
       aic_auto_dock::gui_way2Result result;
       result.result = aic_auto_dock::gui_way2Result::CANCLE;
-      result.remaining_distance = port_foot_frame.getOrigin().x();
+      result.remaining_distance = target_foot_frame.getOrigin().x();
       as_->setAborted(result);
       ROS_INFO("gui_way: Cancle goal, result.remaining_distance:%f", result.remaining_distance);
       return false;
