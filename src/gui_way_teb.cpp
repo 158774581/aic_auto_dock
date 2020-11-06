@@ -530,6 +530,8 @@ void gui_way::Laserhander(const sensor_msgs::LaserScan& msg)
         last_point.x = x;
         last_point.y = y;
       }
+      //根据激光雷达数据微调port位姿
+      
 
       if (avoidType_ == AvoidType::ROUND)
       {

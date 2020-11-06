@@ -136,8 +136,14 @@ bool teb_planner::isTrajFeasible()
   {
     boost::shared_ptr<TebOptimalPlanner> p_planner = boost::dynamic_pointer_cast<TebOptimalPlanner>(planner_);
     p_planner.get()->getFullTrajectory(traj);
+    double cfg_dis = 0.1;
     for(auto pose:traj)
     {
+      if(hypot(pose.pose.position.x-traj.at(0).pose.position.x,\
+        pose.pose.position.y-traj.at(0).pose.position.y)>cfg_dis)
+        {
+          break;
+        }
       predict_pose.x()    = pose.pose.position.x;
       predict_pose.y()    = pose.pose.position.y;
       predict_pose.theta()    = tf::getYaw(pose.pose.orientation);
